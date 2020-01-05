@@ -5,7 +5,7 @@ from utils.common import get_ext, replace_ext
 
 
 # relative path from the root.
-TEMPLATE_PATH = 'src/features/profile_template.ipynb'
+TEMPLATE_PATH = 'src/utils/profile_template.ipynb'
 
 
 def parse_args():
@@ -44,7 +44,7 @@ def make_profiles(dir_or_path):
     if os.path.isdir(dir_or_path):
         files = search_by_extension(dir_or_path, exts)
     else:
-        assert os.path.splitext(dir_or_path)[0] in ['.csv', '.ftr']
+        assert os.path.splitext(dir_or_path)[1] in ['.csv', '.ftr']
         files = [dir_or_path]
 
     num_files = len(files)
@@ -60,6 +60,7 @@ def make_profiles(dir_or_path):
 
         # save as a new notebook.
         nb_path = replace_ext(fpath, '.ipynb')
+
         with open(nb_path, 'w') as f:
             f.write(nb_src)
 

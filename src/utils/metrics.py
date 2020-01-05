@@ -1,19 +1,17 @@
 
 from functools import partial
 import numpy as np
-import pandas as pd
 import scipy
 from numba import jit
 
 
 @jit
-def calc_qwk(a1, a2):
+def qwk(a1, a2):
     """
     Source: https://www.kaggle.com/c/data-science-bowl-2019/discussion/114133#latest-660168
 
     :param a1:
     :param a2:
-    :param max_rat:
     :return:
     """
     max_rat = 3
@@ -40,26 +38,33 @@ def calc_qwk(a1, a2):
     return 1 - o / e
 
 
+def digitize(x, boundaries):
+    """
+    >>> x = np.array([0.1, 1.1, 2.1])
+    >>> boundaries = [0.2, 1.6]
+    >>> digitize(x, boundaries)
+    array([0, 1, 2])
+
+    """
+    bins = [-np.inf] + list(np.sort(boundaries)) + [np.inf]
+    return np.digitize(x, bins) - 1
+
+
 class OptimizedRounder(object):
     """
     Class to optimize round boundaries to maximize QWK.
     """
 
     def __init__(self):
-        self.coef_ = None
+        self.boundaries = None
 
     def _kappa_loss(self, coef, y_true, y_pred):
-        return -calc_qwk(y_true, self.round(y_pred, coef))
+        return -qwk(y_true, digitize(y_pred, coef))
 
     def fit(self, y_true, y_pred):
         loss_partial = partial(self._kappa_loss, y_true=y_true, y_pred=y_pred)
-        initial_coef = [0.5, 1.5, 2.5]
-        self.coef_ = scipy.optimize.minimize(loss_partial, initial_coef, method='nelder-mead')
+        self.boundaries = scipy.optimize.minimize(loss_partial, [0.5, 1.5, 2.5],
+                                                  method='nelder-mead')['x']
 
-    def round(self, x, coef):
-        # ref.: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.cut.html
-        bins = [-np.inf] + list(np.sort(coef)) + [np.inf]
-        return pd.cut(x, bins, labels=False)
-
-    def coefficients(self):
-        return self.coef_['x']
+    def predict(self, x):
+        return digitize(x, self.boundaries)

@@ -1,8 +1,7 @@
-import os
 import numpy as np
 import pandas as pd
 
-from utils.common import remove_ext, suffix_list
+from utils.common import remove_dir_ext, suffix_list
 from utils.io import read_from_clean, save_features
 from utils.encoding import build_one_hot_encoder, get_categories
 from utils.dataframe import suffix_columns
@@ -39,7 +38,7 @@ def main():
     gt_stats_train = game_time_stats(train, encoder)
     gt_stats_test = game_time_stats(test, encoder)
 
-    name = remove_ext(os.path.basename(__file__))
+    name = remove_dir_ext(__file__)
     save_features(gt_stats_train, name, 'train')
     save_features(gt_stats_test, name, 'test')
 

@@ -134,3 +134,19 @@ def plot_label_share(labels):
     ax.set_title('Label Share')
     fig.tight_layout()
     return fig
+
+
+def plot_eval_history(eval_results):
+    fig, ax = plt.subplots()
+    for fold_idx, eval_result in enumerate(eval_results):
+        for data_name, metrics in eval_result.items():
+            for metric_name, values in metrics.items():
+                label = f'{data_name}-{metric_name}-{fold_idx}'
+                ax.plot(values, label=label, zorder=1)[0]
+                # ax.scatter(data['best_iteration'], data['values'][data['best_iteration'] - 1],
+                #            s=60, c=[line.get_color()], edgecolors='k', linewidths=1, zorder=2)
+    ax.set_xlabel('Iteration')
+    ax.set_title('Evaluation History (marker on each line represents the best iteration)')
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    fig.tight_layout()
+    return fig

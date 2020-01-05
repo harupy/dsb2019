@@ -1,37 +1,11 @@
 import os
-from functools import reduce
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
 from tqdm import tqdm
 
 from utils.common import remove_ext
 from utils.io import read_from_clean, save_features
-
-
-def build_one_hot_encoder(train, test, cols_encode):
-    """
-    Build a one-hot encoder from the given train and test dataframe.
-    """
-    merged = train[cols_encode].append(test[cols_encode]).astype(str)
-    encoder = OneHotEncoder(dtype=np.int8)
-    return encoder.fit(merged)
-
-
-def get_categories(encoder):
-    cats = reduce(lambda lst, cat: lst + cat.tolist(), encoder.categories_, [])
-
-    # find duplicated elements
-    seen = set()
-    dups = []
-    for x in cats:
-        if x not in seen:
-            seen.add(x)
-        else:
-            dups.append(x)
-
-    assert len(dups) == 0, 'Find duplicated elements: {}'.format(dups)
-    return cats
+from utils.encoding import build_one_hot_encoder, get_categories
 
 
 def apply_one_hot_encoder(df, cols_encode, encoder, drop=True):

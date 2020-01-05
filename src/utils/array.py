@@ -2,12 +2,31 @@ import numpy as np
 
 
 def div_by_sum(x):
+    """
+    Divide an array by its sum.
+
+    Examples
+    --------
+    >>> arr = np.array([1, 2, 3, 4])
+    >>> div_by_sum(arr)
+    array([0.1, 0.2, 0.3, 0.4])
+
+    """
     return x / x.sum()
 
 
 def shift_array(arr, num, fill_value=np.nan):
     """
     Shift a numpy array.
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        Array to shift.
+    num : int
+        Number of periods to shift. can be positive or negative.
+    fill_value : object optional
+        Scalar value to use for newly introduced missing values.
 
     Examples
     --------

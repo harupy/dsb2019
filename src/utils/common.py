@@ -136,5 +136,24 @@ def replace_ext(fpath, ext):
     return os.path.splitext(fpath)[0] + ext
 
 
+def remove_dir_ext(fpath):
+    """
+    Remove the directory component and extension from the specified path.
+
+    Examples
+    --------
+    >>> remove_dir_ext('test.txt')
+    'test'
+
+    >>> remove_dir_ext('dir/test.txt')
+    'test'
+
+    >>> remove_dir_ext('test')
+    'test'
+
+    """
+    return os.path.splitext(os.path.basename(fpath))[0]
+
+
 def print_divider(text):
     print('\n---------- {} ----------\n'.format(text))

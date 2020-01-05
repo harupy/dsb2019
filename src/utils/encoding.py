@@ -1,15 +1,39 @@
 from functools import reduce
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 
 
-def build_one_hot_encoder(train, test, cols_encode):
+def build_one_hot_encoder(train, test, cols):
     """
     Build a one-hot encoder from the given train and test dataframe.
+
+    Returns
+    -------
+    sklearn.preprocessing.OneHotEncoder
+        Fitted one-hot encodoer
+
     """
-    merged = train[cols_encode].append(test[cols_encode]).astype(str)
+    merged = train[cols].append(test[cols]).astype(str)
     encoder = OneHotEncoder(dtype=np.int8)
     return encoder.fit(merged)
+
+
+def apply_one_hot_encoder(df, encoder, cols, drop=False):
+    """
+    Apply a one-hot encoder to the given dataframe.
+    """
+
+    categories = get_categories(encoder)
+
+    # without index, pd.concat does not work properly.
+    encoded = pd.DataFrame(encoder.transform(df[cols].astype(str)).toarray(),
+                           index=df.index, columns=categories,)
+
+    if drop:
+        return pd.concat([df.drop(cols, axis=1), encoded], axis=1)
+    else:
+        return pd.concat([df, encoded], axis=1)
 
 
 def get_categories(encoder):

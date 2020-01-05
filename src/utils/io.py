@@ -4,19 +4,22 @@ import yaml
 import importlib
 import pandas as pd
 
-from utils.common import remove_ext
 
-# relative path from the project root
-RAW_DIR = 'data/raw'
-CLEAN_DIR = 'data/clean'
-FTR_DIR = 'data/features'
+PARENT_DIR = '../input' if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ else 'data'
+RAW_DIR = f'{PARENT_DIR}/data-science-bowl-2019'
+CLEAN_DIR = f'{PARENT_DIR}/clean'
+FTR_DIR = f'{PARENT_DIR}/features'
+
+for d in [CLEAN_DIR, FTR_DIR]:
+    if not os.path.exists(d):
+        os.mkdir(d)
 
 
 def read_config(fpath):
     """
     Read a config dict from the given python script.
     """
-    name = remove_ext(fpath.replace('/', '.'))
+    name = os.path.splitext(fpath)[0].replace('/', '.')
     return importlib.import_module(name).config
 
 
@@ -34,6 +37,14 @@ def read_yaml(fpath):
     """
     with open("example.yaml", 'r') as f:
         return yaml.safe_load(f)
+
+
+def save_dict(dct, fpath):
+    """
+    Save a dictionary as json.
+    """
+    with open(fpath, 'w') as f:
+        json.dump(dct, f, indent=2)
 
 
 def read_data(fpath):
@@ -105,11 +116,22 @@ def read_features(name, train_or_test=None, fmt='ftr'):
         return read_data(os.path.join(save_dir, f'{name}_{train_or_test}.{fmt}'))
 
 
-def save_features(df, name, train_or_test, fmt='ftr', reduce_mem=True):
+def save_features(df, name, train_or_test, fmt='ftr'):
     """
     Save a dataframe to the feature directory.
-    """
 
+    Parameters
+    ----------
+    df : dataframe
+        dataframe containing features.
+    name : str
+        feature name
+    train_or_test : str enum ('train', 'test')
+        string to indicate train or test set
+    fmt : str default 'ftr'
+        format to save features in.
+
+    """
     if train_or_test not in ['train', 'test']:
         raise ValueError('`train_or_test` must be either "train" or "test".')
 
@@ -121,4 +143,23 @@ def save_features(df, name, train_or_test, fmt='ftr', reduce_mem=True):
     # stringify columns because feather can only accept string column names.
     df.columns = list(map(str, df.columns))
     fname = f'{name}_{train_or_test}.{fmt}'
-    save_data(df, os.path.join(save_dir, fname))
+    fpath = os.path.join(save_dir, fname)
+    save_data(df, fpath)
+
+
+def save_features_meta(data, name):
+    """
+    Save features meta data (dict).
+    """
+    fpath = os.path.join(FTR_DIR, name, 'meta.json')
+    save_dict(data, fpath)
+
+
+def find_features_meta(name):
+    """
+    Find features meta data (dict). If the meta data file is not found, return None.
+    """
+    fpath = os.path.join(FTR_DIR, name, 'meta.json')
+    if not os.path.exists(fpath):
+        return
+    return read_json(fpath)

@@ -3,8 +3,9 @@ from utils.dataframe import reduce_mem_usage
 
 
 def main():
-    files = ['train.csv', 'test.csv', 'train_labels.csv']
-    train, test, labels = read_from_raw(files)
+    train = read_from_raw('train.csv')
+    test = read_from_raw('test.csv')
+    labels = read_from_raw('train_labels.csv')
 
     # remove useless installation ids
     mask = train['installation_id'].isin(labels['installation_id'].unique())

@@ -2,19 +2,30 @@ import os
 import shutil
 import gc
 import argparse
+import re
 import tempfile
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 from sklearn.metrics import confusion_matrix
-import mlflow
 
-from utils.common import remove_ext, print_divider
-from utils.io import read_config, read_from_raw, read_features
+from utils.common import remove_dir_ext, prefix_list, print_divider
+from utils.io import (read_config,
+                      read_from_clean,
+                      read_from_raw,
+                      read_features,
+                      save_features,
+                      find_features_meta)
 from utils.array import div_by_sum
-from utils.plotting import plot_feature_importance, plot_label_share, plot_confusion_matrix
-from utils.metrics import calc_qwk, OptimizedRounder
+from utils.plotting import (plot_feature_importance,
+                            plot_label_share,
+                            plot_confusion_matrix,
+                            plot_eval_history)
+from utils.metrics import qwk, OptimizedRounder
+from features.funcs import find_highly_correlated_features
+
+print(lgb.__version__)
 
 
 def parse_args():
@@ -24,6 +35,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train model')
     parser.add_argument('-c', '--config', required=True, help='Config file path')
     return parser.parse_args()
+
+
+def on_kaggle_kernel():
+    return 'KAGGLE_KERNEL_RUN_TYPE' in os.environ
 
 
 def is_booster(model):
@@ -50,19 +65,24 @@ def is_booster(model):
 
 def cross_validation(config, X, y, index_sets):
     models = []
+    eval_results = []
     for fold_idx, (idx_trn, idx_val) in enumerate(index_sets):
         print_divider(f'Fold: {fold_idx}')
         X_trn, X_val = X.iloc[idx_trn], X.iloc[idx_val]
         y_trn, y_val = y[idx_trn], y[idx_val]
 
-        dtrn = lgb.Dataset(X_trn, y_trn)
-        dval = lgb.Dataset(X_val, y_val)
+        trn_set = lgb.Dataset(X_trn, y_trn)
+        val_set = lgb.Dataset(X_val, y_val)
 
-        model = lgb.train(config['params'], dtrn,
-                          valid_sets=[dtrn, dval],
-                          **config['fit_params'])
+        eval_result = {}
+        model = lgb.train(config['params'], trn_set,
+                          valid_sets=[trn_set, val_set],
+                          valid_names=['train', 'valid'],
+                          callbacks=[lgb.record_evaluation(eval_result)],
+                          ** config['fit_params'])
         models.append(model)
-    return models
+        eval_results.append(eval_result)
+    return models, eval_results
 
 
 def get_fold(config):
@@ -100,19 +120,34 @@ def predict_avg(models, X):
     return np.mean([model.predict(X) for model in models], axis=0)
 
 
-def log_figure(fig, fname):
+def flatten_features(features):
     """
-    Log a matplotlib figure as an artifact.
+    >>> flatten_features(['a', 'b'])
+    ['a', 'b']
+
+    >>> flatten_features([{'a': ['b', 'c']}])
+    ['a_b', 'a_c']
+
+    >>> flatten_features(['a', {'b': ['c', 'd']}])
+    ['a', 'b_c', 'b_d']
+
     """
-    tmpdir = tempfile.mkdtemp()
-    fpath = os.path.join(tmpdir, fname)
-    fig.savefig(fpath, dpi=200)
-    mlflow.log_artifact(fpath)
-    shutil.rmtree(tmpdir)  # clean up tmpdir
+    result = []
+
+    for feat in features:
+        if isinstance(feat, str):
+            result.append(feat)
+        elif isinstance(feat, dict):
+            for parent, children in feat.items():
+                result.extend(prefix_list(children, parent))
+        else:
+            raise TypeError('Invalid type: {}'.format(type(feat)))
+    return result
 
 
 def main():
     args = parse_args()
+    # labels = read_from_clean('train_labels_unsorted.ftr')
     labels = read_from_raw('train_labels.csv')
     train = labels.copy()
     train = train[['installation_id', 'game_session', 'accuracy_group']]
@@ -124,10 +159,16 @@ def main():
     config = read_config(args.config)
 
     # merge features
-    for feature_name in config['features']:
+    for feature_name in flatten_features(config['features']):
         train_ft, test_ft = read_features(feature_name)
 
-        # test
+        meta = find_features_meta(feature_name)
+
+        if meta:
+            train_ft = train_ft[meta['use_cols']]
+            test_ft = test_ft[meta['use_cols']]
+
+        # train
         train = pd.merge(train, train_ft, how='left', on=['installation_id', 'game_session'])
 
         # number of rows should not change before and after merge.
@@ -140,6 +181,24 @@ def main():
 
         del train_ft, test_ft
         gc.collect()
+
+    train = train.fillna(0)
+    test = test.fillna(0)
+
+    # remove highly correlated features.
+    to_remove = find_highly_correlated_features(train)
+    train = train.drop(to_remove, axis=1)
+    test = test.drop(to_remove, axis=1)
+
+    config_name = remove_dir_ext(args.config)
+    save_features(train, 'final', 'train')
+    save_features(test, 'final', 'test')
+
+    # replace non-alphanumeric characters with '_'
+    # to prevent LightGBM from raising an error on invalid column names.
+    non_alphanumeric = r'[^a-zA-Z\d]+'
+    train.columns = [re.sub(non_alphanumeric, '_', c).rstrip('_') for c in train.columns]
+    test.columns = [re.sub(non_alphanumeric, '_', c).rstrip('_') for c in test.columns]
 
     # prepare train data
     inst_ids_train = train['installation_id']  # keep installation_id for group k fold
@@ -156,7 +215,7 @@ def main():
     fold = get_fold(config)
     index_sets = list(fold.split(X_train, y_train, inst_ids_train))
 
-    models = cross_validation(config, X_train, y_train, index_sets)
+    models, eval_results = cross_validation(config, X_train, y_train, index_sets)
     oof_pred = oof_predict(models, X_train, index_sets)
 
     # feature importance
@@ -167,14 +226,13 @@ def main():
     # optimize round boundaries
     opt = OptimizedRounder()
     opt.fit(y_train, oof_pred)
-    coef = opt.coefficients()
-    oof_pred_round = opt.round(oof_pred, coef)
-    qwk = calc_qwk(y_train, oof_pred_round)
-    print('QWK:', qwk)
+    oof_pred_round = opt.predict(oof_pred)
+    QWK = qwk(y_train, oof_pred_round)
+    print('QWK:', QWK)
 
     # predict
     proba = predict_avg(models, X_test)
-    pred = opt.round(proba, coef)
+    pred = opt.predict(proba)
 
     # assert pred does not contain invalid values
     assert (~np.isnan(pred)).all()
@@ -184,23 +242,38 @@ def main():
     sbm['accuracy_group'] = pred
     sbm.to_csv('submission.csv', index=False)
 
-    # log results with mlflow
-    expr_name = remove_ext(os.path.basename(args.config))
+    # On kaggle kernel, return here.
+    if on_kaggle_kernel():
+        return
 
-    # create mlflow experiment if not exists
-    if mlflow.get_experiment_by_name(expr_name) is None:
-        mlflow.create_experiment(expr_name)
+    import mlflow
 
-    mlflow.set_experiment(expr_name)
+    def log_figure(fig, fname):
+        """
+        Log a matplotlib figure as an artifact.
+        """
+        tmpdir = tempfile.mkdtemp()
+        fpath = os.path.join(tmpdir, fname)
+        fig.savefig(fpath, dpi=200)
+        mlflow.log_artifact(fpath)
+        shutil.rmtree(tmpdir)  # clean up tmpdir
+
+    # create mlflow experiment if not exists.
+    if mlflow.get_experiment_by_name(config_name) is None:
+        mlflow.create_experiment(config_name)
+
+    mlflow.set_experiment(config_name)
     with mlflow.start_run():
         # log config file
         mlflow.log_artifact(args.config)
 
-        mlflow.log_metrics({'qwk': qwk})
+        mlflow.log_params({'round_coefficients': opt.boundaries.tolist()})
+        mlflow.log_metrics({'qwk': QWK})
 
         # log plots
         cm = confusion_matrix(y_train, oof_pred_round)
         log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
+        log_figure(plot_eval_history(eval_results), 'eval_history.png')
 
         # predicted label share
         log_figure(plot_label_share(pred), 'pred_label_share.png')

@@ -1,53 +1,42 @@
-import os
-
-from utils.common import prefix_list, remove_ext
-from utils.io import read_features, save_features
-from utils.dataframe import concat_dfs
-
-
-def cum_stats(df, is_test=False):
-
-    def process_gdf(df):
-        funcs = {
-            'cumsum': ['num_correct', 'num_incorrect', 'attempts'],
-            'cummean': ['accuracy', 'accuracy_group'],  # note that this contains accuracy_group
-        }
-
-        dfs = []
-        drop_cols = []
-        for func, cols in funcs.items():
-            drop_cols += cols
-
-            # for test, it's not necessary to shift rows
-            periods = 0 if is_test else 1
-
-            if func == 'cumsum':
-                cum = df[cols].cumsum().shift(periods)
-            elif func == 'cummean':
-                cum = df[cols].expanding().mean().shift(periods)
-
-            cum.columns = prefix_list(cols, func)
-            dfs.append(cum)
-
-        return concat_dfs([df.drop(drop_cols, axis=1)] + dfs, axis=1)
-
-    return (
-        df
-        .groupby('installation_id', sort=False)
-        .apply(process_gdf)
-        .drop(['title', 'timestamp'], axis=1)
-    )
+from utils.common import remove_dir_ext
+from utils.io import read_from_clean, save_features
+from utils.dataframe import apply_funcs
+from features.funcs import (filter_assessment_attempt,
+                            assign_attempt_result,
+                            calc_attempt_stats,
+                            cumulative_by_user,)
 
 
 def main():
-    stats_train, stats_test = read_features('assessment_attempts_stats')
+    train = read_from_clean('train.ftr')
+    test = read_from_clean('test.ftr')
+    funcs = [
+        filter_assessment_attempt,
+        assign_attempt_result,
+        calc_attempt_stats,
+    ]
 
-    cum_stats_train = cum_stats(stats_train)
-    cum_stats_test = cum_stats(stats_test, True)
+    train = apply_funcs(train, funcs)
+    test = apply_funcs(test, funcs)
 
-    name = remove_ext(os.path.basename(__file__))
-    save_features(cum_stats_train, name, 'train')
-    save_features(cum_stats_test, name, 'test')
+    #######################################################
+
+    cum_funcs = {
+        'cumsum': ['num_correct', 'num_incorrect', 'attempts'],
+        'cummean': ['accuracy', 'accuracy_group'],
+    }
+    train = cumulative_by_user(train, cum_funcs)
+    test = cumulative_by_user(test, cum_funcs, True)
+
+    train['overall_accuracy'] = train['cumsum_num_correct'] / train['cumsum_attempts']
+    test['overall_accuracy'] = test['cumsum_num_correct'] / test['cumsum_attempts']
+
+    train = train.fillna(0)
+    test = test.fillna(0)
+
+    name = remove_dir_ext(__file__)
+    save_features(train, name, 'train')
+    save_features(test, name, 'test')
 
 
 if __name__ == '__main__':

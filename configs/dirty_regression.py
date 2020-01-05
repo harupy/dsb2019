@@ -15,11 +15,12 @@ config = {
     'random_state': 42,
   },
 
+
   'fit_params': {
       'num_boost_round': 10000,
       'verbose_eval': 100,
       'early_stopping_rounds': 100,
-      'categorical_feature': ['title']  # important
+      'categorical_feature': ['title']
   },
 
   'fold': {
@@ -30,21 +31,8 @@ config = {
   },
 
   'features': [
-    # can be str or dict.
     'title',
-    {'game_session_cumsum': [
-      'title',
-      'event_code',
-      'title_event_code',
-      'type',
-    ]},
-    # 'media_type_count',
+    'game_session_stats',
     '4020_attempts_stats_cum',
-    'game_time_stats',
-    # 'assessment_stats_with_invalid_sessions'
-    'assessment_attempts_stats_cum',
-    # 'misses',
-    # 'consecutive_assessments',
-    # 'unfinished_assessments',
   ]
 }
