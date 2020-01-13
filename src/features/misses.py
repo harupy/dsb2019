@@ -2,7 +2,7 @@ import numpy as np
 
 from utils.common import remove_dir_ext
 from utils.io import read_from_clean, save_features
-from features.funcs import cumulative_by_user
+from features.funcs import cum_by_user
 
 
 def extract_misses(df):
@@ -39,8 +39,8 @@ def main():
         'cummean': ['misses'],
     }
 
-    train = cumulative_by_user(train, funcs)
-    test = cumulative_by_user(test, funcs)
+    train = cum_by_user(train, funcs)
+    test = cum_by_user(test, funcs)
 
     train = train.fillna(0)
     test = test.fillna(0)

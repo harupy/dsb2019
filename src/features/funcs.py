@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import mean_squared_error
 
 from utils.common import with_name
 from utils.dataframe import prefix_columns, concat_dfs
@@ -12,7 +13,7 @@ def filter_assessment(df):
     return df[is_assessment(df)]
 
 
-def is_assessment_attempt(df):
+def is_assessment_attempt(df, is_test=False):
     """
     Detect assessments.
 
@@ -44,7 +45,8 @@ def is_assessment_attempt(df):
     """
     return (
         (df['title'].eq('Bird Measurer (Assessment)') & df['event_code'].eq(4110)) |
-        (df['title'].ne('Bird Measurer (Assessment)') & df['event_code'].eq(4100)) &
+        (df['title'].ne('Bird Measurer (Assessment)') & df['event_code'].eq(4100)) |
+        (is_test & df['installation_id'].ne(df['installation_id'].shift(-1))) &
         df['type'].eq('Assessment')
     )
 
@@ -130,20 +132,58 @@ def classify_accuracy(acc):
 def find_highly_correlated_features(df, thresh=0.995):
     counter = 0
     features = df.select_dtypes('number').columns
-    to_remove = []
+    result = []
     for feat_a in features:
         for feat_b in features:
-            if (feat_a != feat_b) and (feat_a not in to_remove) and (feat_b not in to_remove):
+            if (feat_a != feat_b) and (feat_a not in result) and (feat_b not in result):
                 corr = np.corrcoef(df[feat_a], df[feat_b])[0][1]
                 if abs(corr) > thresh:
                     counter += 1
-                    to_remove.append(feat_b)
+                    result.append(feat_b)
                     print('{}: FEAT_A: {} FEAT_B: {} - Correlation: {}'
                           .format(counter, feat_a, feat_b, corr))
-    return to_remove
+    return result
 
 
-def calc_attempt_stats(df):
+def hist_mse(train, test, adjust=False, plot=False):
+    n_bins = 10
+
+    if adjust:
+        test *= train.mean() / test.mean()
+    perc_95 = np.percentile(train, 95)
+    train = np.clip(train, 0, perc_95)
+    test = np.clip(test, 0, perc_95)
+    train_hist = np.histogram(train, bins=n_bins)[0] / len(train)
+    test_hist = np.histogram(test, bins=n_bins)[0] / len(test)
+    return mean_squared_error(train_hist, test_hist)
+
+
+def adjust_distribution(train, test):
+    to_remove = []
+    ignore = ['accuracy_group', 'installation_id', 'accuracy_group', 'title']
+    test_adjusted = test.copy()
+    for col in test.columns:
+        if col in ignore:
+            continue
+
+        try:
+            mean_train = train[col].mean()
+            mean_test = test[col].mean()
+            mse = hist_mse(train[col], test[col], adjust=True)
+
+            adjust_factor = mean_train / mean_test
+            if adjust_factor > 10 or adjust_factor < 0.1:  # or error > 0.01:
+                to_remove.append(col)
+                print(col, mean_train, mean_test, mse)
+            else:
+                test_adjusted[col] *= adjust_factor
+        except Exception as e:
+            print(e)
+
+    return test_adjusted, to_remove
+
+
+def calc_attempt_stats(df, keep_title=False):
 
     aggs = {
         'attempt_result': [
@@ -153,7 +193,7 @@ def calc_attempt_stats(df):
     }
 
     # aggregate
-    by = ['installation_id', 'game_session']
+    by = ['installation_id', 'game_session'] + (['title'] if keep_title else [])
     stats = df.groupby(by, sort=False).agg(aggs).reset_index()
 
     # flatten columns
@@ -166,7 +206,7 @@ def calc_attempt_stats(df):
     return stats
 
 
-def cumulative_by_user(df, funcs, is_test=False):
+def cum_by_user(df, funcs, is_test=False):
     def take_cum(gdf):
         """
         A function to apply to each group dataframe.
@@ -180,6 +220,10 @@ def cumulative_by_user(df, funcs, is_test=False):
                 cum = gdf[cols].expanding().sum()
             elif op_name == 'cummean':
                 cum = gdf[cols].expanding().mean()
+            elif op_name == 'cummax':
+                cum = gdf[cols].expanding().max()
+            else:
+                raise ValueError('Invalid operation name: {}'.format(op_name))
 
             cum = prefix_columns(cum, op_name)
 
@@ -189,3 +233,13 @@ def cumulative_by_user(df, funcs, is_test=False):
         return concat_dfs([gdf.drop(drop_cols, axis=1)] + dfs, axis=1)
 
     return df.groupby('installation_id', sort=False).apply(take_cum)
+
+
+def move_id_front(df):
+    """
+    Move installation_id and game_session to front.
+    """
+    cols = df.columns.tolist()
+    cols.insert(0, cols.pop(cols.index('game_session')))
+    cols.insert(0, cols.pop(cols.index('installation_id')))
+    return df[cols]

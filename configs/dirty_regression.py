@@ -15,15 +15,14 @@ config = {
     'random_state': 42,
   },
 
-
-  'fit_params': {
+  'fit': {
       'num_boost_round': 10000,
       'verbose_eval': 100,
       'early_stopping_rounds': 100,
       'categorical_feature': ['title']
   },
 
-  'fold': {
+  'cv': {
     'class': 'GroupKFold',
     'params': {
       'n_splits': 5

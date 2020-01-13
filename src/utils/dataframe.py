@@ -1,3 +1,7 @@
+"""
+Utility functions for pandas dataframe.
+"""
+
 from functools import reduce
 import numpy as np
 import pandas as pd
@@ -117,3 +121,11 @@ def suffix_columns(df, suffix, sep='_', exclude=None):
     """
     exclude = [] if exclude is None else exclude
     return df.rename(columns={c: c + sep + suffix for c in df.columns if c not in exclude})
+
+
+def assert_columns_equal(left, right):
+    assert left.columns.tolist() == right.columns.tolist()
+
+
+def find_constant_columns(df):
+    return df.loc[:, (df == df.iloc[0]).all()].columns.tolist()

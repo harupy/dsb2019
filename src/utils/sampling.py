@@ -1,3 +1,7 @@
+"""
+Utility functions for sampling.
+"""
+
 from zlib import crc32
 
 

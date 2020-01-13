@@ -6,12 +6,11 @@ config = {
     'metric': 'rmse',
     'subsample': 0.75,
     'subsample_freq': 1,
-    'learning_rate': 0.04,
+    'learning_rate': 0.01,
     'feature_fraction': 0.9,
-    'max_depth': -1,
+    'max_depth': 15,
     'lambda_l1': 1,
     'lambda_l2': 1,
-    'verbose': -1,
     'random_state': 42,
   },
 
@@ -42,7 +41,7 @@ config = {
     # ]},
     'game_session_stats',
     # 'media_type_count',
-    '4020_attempts_stats_cum',
+    # '4020_attempts_stats_cum',
     # 'game_time_stats',
     # 'assessment_stats_with_invalid_sessions'
     # 'assessment_attempts_stats_cum',

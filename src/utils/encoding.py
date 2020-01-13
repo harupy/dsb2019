@@ -1,3 +1,7 @@
+"""
+Utility functions for encoding.
+"""
+
 from functools import reduce
 import numpy as np
 import pandas as pd

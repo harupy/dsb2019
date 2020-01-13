@@ -23,7 +23,7 @@ def encode_file(path):
     return base64.b64encode(compressed).decode('utf-8')
 
 
-def search_by_extension(top, ext):
+def search_by_ext(top, ext):
     ret = []
     for root, dirs, files in os.walk(top):
         for fname in files:
@@ -36,13 +36,14 @@ def search_by_extension(top, ext):
 def build_script():
     args = parse_args()
     config = read_config(args.config)
-    to_encode = reduce(lambda l, d: l + search_by_extension(d, ['.py']), ['src', 'configs'], [])
+    to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), ['src', 'configs'], [])
     scripts = {str(path): encode_file(Path(path)) for path in to_encode}
-    template = Path('src/script_template.py').read_text('utf8')
-    Path('src/script.py').write_text(
+    template = Path('script_template.py').read_text('utf8')
+    Path('script.py').write_text(
         (template
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
          .replace('{{config}}', json.dumps(config, indent=2))
+         .replace('{{config_path}}', args.config)
          ),
         encoding='utf8')
 

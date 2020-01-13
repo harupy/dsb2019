@@ -6,7 +6,7 @@ from utils.dataframe import apply_funcs
 from features.funcs import (filter_assessment_attempt,
                             assign_attempt_result,
                             calc_attempt_stats,
-                            cumulative_by_user)
+                            cum_by_user)
 
 
 def main():
@@ -26,8 +26,8 @@ def main():
     test['unfinished'] = test['accuracy_group'].eq(0)
 
     funcs = {'cumsum': ['unfinished']}
-    train = cumulative_by_user(train, funcs)
-    test = cumulative_by_user(test, funcs)
+    train = cum_by_user(train, funcs)
+    test = cum_by_user(test, funcs)
 
     train = train.fillna({'cumsum_unfinished': 0})
     test = test.fillna({'cumsum_unfinished': 0})

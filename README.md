@@ -37,4 +37,10 @@ To address this issue, @fergusoci tried:
 - Building a binary 0/1 accuracy group model and a) combining the results from this with the overall model. (Didn't help) b) feeding the out of sample probabilities from this as explanatory variables in the main model. (Gave a slight improvement, but nothing ground breaking).
 - In post-processing, optimizing regression cutoffs for this group separately. (Didn't help)
 
-## Public and Private
+## Discussions
+
+https://www.kaggle.com/c/data-science-bowl-2019/discussion/114783#679024
+
+https://www.kaggle.com/c/data-science-bowl-2019/discussion/122149#697661
+
+> For validation only. Truncating for training gave bad results in my case.

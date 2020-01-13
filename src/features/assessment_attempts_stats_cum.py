@@ -4,7 +4,7 @@ from utils.dataframe import apply_funcs
 from features.funcs import (filter_assessment_attempt,
                             assign_attempt_result,
                             calc_attempt_stats,
-                            cumulative_by_user,)
+                            cum_by_user)
 
 
 def main():
@@ -23,10 +23,11 @@ def main():
 
     cum_funcs = {
         'cumsum': ['num_correct', 'num_incorrect', 'attempts'],
-        'cummean': ['accuracy', 'accuracy_group'],
+        'cummean': ['num_incorrect', 'attempts', 'accuracy', 'accuracy_group'],
+        'cummax': ['num_incorrect', 'attempts', 'accuracy', 'accuracy_group'],
     }
-    train = cumulative_by_user(train, cum_funcs)
-    test = cumulative_by_user(test, cum_funcs, True)
+    train = cum_by_user(train, cum_funcs)
+    test = cum_by_user(test, cum_funcs, True)
 
     train['overall_accuracy'] = train['cumsum_num_correct'] / train['cumsum_attempts']
     test['overall_accuracy'] = test['cumsum_num_correct'] / test['cumsum_attempts']

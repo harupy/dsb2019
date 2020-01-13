@@ -1,10 +1,14 @@
+"""
+A script to make a profile notebook from given data.
+"""
+
 import os
 import argparse
 
 from utils.common import get_ext, replace_ext
 
 
-# relative path from the root.
+# relative from the root.
 TEMPLATE_PATH = 'src/utils/profile_template.ipynb'
 
 
@@ -17,17 +21,17 @@ def parse_args():
     return parser.parse_args()
 
 
-def search_by_extension(top, ext):
+def search_by_ext(top, ext):
     """
     Search files by extension under the specified diretory.
     """
-    ret = []
+    result = []
     for root, dirs, files in os.walk(top):
         for fname in files:
             if get_ext(fname) not in ext:
                 continue
-            ret.append(os.path.join(root, fname))
-    return ret
+            result.append(os.path.join(root, fname))
+    return result
 
 
 def execute_notebook(nb_path):
@@ -40,9 +44,9 @@ def make_profiles(dir_or_path):
     with open(TEMPLATE_PATH, 'r') as f:
         template_src = f.read()
 
-    exts = ['.csv', '.ftr']
+    ext = ['.csv', '.ftr']
     if os.path.isdir(dir_or_path):
-        files = search_by_extension(dir_or_path, exts)
+        files = search_by_ext(dir_or_path, ext)
     else:
         assert os.path.splitext(dir_or_path)[1] in ['.csv', '.ftr']
         files = [dir_or_path]

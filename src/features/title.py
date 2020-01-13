@@ -9,15 +9,15 @@ def main():
     mapper = {title: idx for idx, title in enumerate(train['title'].unique())}
 
     cols = ['installation_id', 'game_session', 'title']
-    title_train = train[cols]
-    title_test = test.groupby('installation_id', sort=False).last().reset_index()[cols]
+    train = train[cols]
+    test = test.groupby('installation_id', sort=False).last().reset_index()[cols]
 
-    title_train['title'] = title_train['title'].map(mapper)
-    title_test['title'] = title_test['title'].map(mapper)
+    train['title'] = train['title'].map(mapper)
+    test['title'] = test['title'].map(mapper)
 
     name = remove_dir_ext(__file__)
-    save_features(title_train, name, 'train')
-    save_features(title_test, name, 'test')
+    save_features(train, name, 'train')
+    save_features(test, name, 'test')
 
 
 if __name__ == '__main__':

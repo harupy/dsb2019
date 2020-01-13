@@ -3,11 +3,21 @@ import subprocess
 import gzip
 import base64
 from pathlib import Path
+import pandas as pd
 
 
 SCRIPTS = {{scripts}}
 
 CONFIG = {{config}}
+
+def skip_commit_run():
+    # skip the commit run (https://www.kaggle.com/onodera/skip-1st-run).
+    sbm = pd.read_csv('../input/data-science-bowl-2019/sample_submission.csv')
+
+    # len(sbm) returns 1000 for the public test set, but > 1000 for the private test set.
+    if len(sbm) == 1000:
+        sbm.to_csv('submission.csv', index=False)
+        exit(0)
 
 
 def get_feature_scripts(features):
@@ -32,7 +42,7 @@ def run(command):
     if stdout:
         print('----- stdout -----\n', stdout)
 
-    # note that warnings will be displayed as stderr.
+    # note that warnings will be included in stderr.
     if stderr:
         print('----- stderr -----\n', stderr)
 
@@ -47,13 +57,16 @@ def decode_scripts(scripts):
 
 def main():
     decode_scripts(SCRIPTS)
+    run('cat src/modeling/train.py')
+    skip_commit_run()
+
     feature_scripts = get_feature_scripts(CONFIG['features'])
     feature_scripts = ['src/preprocess/clean_data.py'] + feature_scripts
 
     for feature_script in feature_scripts:
         run(f'python {feature_script}')
 
-    run('python src/modeling/train.py -c configs/baseline.py')
+    run('python src/modeling/train.py -c {{config_path}}')
 
 
 if __name__ == '__main__':

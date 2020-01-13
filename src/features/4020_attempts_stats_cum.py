@@ -2,7 +2,7 @@ from utils.common import remove_dir_ext
 from utils.io import read_from_clean, save_features
 from utils.dataframe import prefix_columns
 from features.funcs import (is_assessment,
-                            cumulative_by_user,
+                            cum_by_user,
                             assign_attempt_result,
                             calc_attempt_stats)
 
@@ -41,8 +41,8 @@ def main():
         'cumsum': ['num_correct', 'num_incorrect', 'attempts'],
         'cummean': ['accuracy'],
     }
-    train = cumulative_by_user(train, funcs)
-    test = cumulative_by_user(test, funcs, is_test=True)
+    train = cum_by_user(train, funcs)
+    test = cum_by_user(test, funcs, is_test=True)
 
     train = train.fillna(0)
     test = test.fillna(0)

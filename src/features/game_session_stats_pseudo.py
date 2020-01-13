@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utils.io import read_from_clean, save_features
+from utils.io import (read_from_clean,
+                      save_to_clean,
+                      save_features,
+                      save_features_meta)
 from utils.common import remove_dir_ext, prefix_list
 from features.funcs import (classify_accuracy,
                             filter_assessment,
@@ -162,9 +165,13 @@ def get_train_and_test(train, test, encoders, assess_titles):
     for ins_id, user_sample in tqdm(train.groupby('installation_id', sort=False)):
         assessments_train += process_user_sample(user_sample, encoders, assess_titles)
 
+    # add assessments in the test data to the train data.
+    for ins_id, user_sample in tqdm(test.groupby('installation_id', sort=False)):
+        assessments_train += process_user_sample(user_sample, encoders, assess_titles)
+
     for ins_id, user_sample in tqdm(test.groupby('installation_id', sort=False)):
         test_data = process_user_sample(user_sample, encoders, assess_titles, is_test_set=True)
-        sessions_test.append(test_data)
+        assessments_test.append(test_data)
 
     return pd.DataFrame(assessments_train), pd.DataFrame(assessments_test)
 
@@ -201,10 +208,13 @@ def main():
     pd.testing.assert_series_equal(merged[cols[-1] + '_x'],
                                    merged[cols[-1] + '_y'],
                                    check_dtype=False, check_names=False)
+    train_labels_pseudo = train[cols]
 
     name = remove_dir_ext(__file__)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
+    save_to_clean(train_labels_pseudo, 'train_labels_pseudo.ftr')
+    save_features_meta({'drop_cols': ['accuracy_group']}, name)
 
 
 if __name__ == '__main__':

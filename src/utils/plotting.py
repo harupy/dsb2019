@@ -1,3 +1,8 @@
+"""
+Utility functions for plotting.
+"""
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -95,34 +100,51 @@ class JointConfusionMatrix:
 
 
 def plot_confusion_matrix(cm):
+    """
+    Plot confusion matrix as a joint heatmap.
+    """
     g = JointConfusionMatrix(cm, height=10)
     g.plot()
     g.fig.tight_layout()
     return g.fig
 
 
-def plot_feature_importance(feature_names, importance, importance_type, limit=30):
+def plot_importance(features, importance, importance_type, max_num_features=None):
     """
-    Plot feature importance and return the figure.
+    Plot feature importance.
     """
-    indices = np.argsort(importance)[-limit:]
-    y = np.arange(len(indices))
+    if max_num_features is None:
+        indices = np.argsort(importance)
+    else:
+        indices = np.argsort(importance)[-max_num_features:]
 
-    fig, ax = plt.subplots()
-    ax.barh(y, importance[indices], align='center', height=0.5)
-    ax.set_yticks(y)
-    ax.set_yticklabels(feature_names[indices])
+    features = np.array(features)[indices]
+    importance = importance[indices]
+    num_features = len(features)
+
+    # If num_features > 10, increase the figure height to prevent the plot
+    # from being too dense.
+    w, h = [6.4, 4.8]  # matplotlib's default figure size
+    h = h + 0.1 * num_features if num_features > 10 else h
+    fig, ax = plt.subplots(figsize=(w, h))
+
+    yloc = np.arange(num_features)
+    ax.barh(yloc, importance, align='center', height=0.5)
+    ax.set_yticks(yloc)
+    ax.set_yticklabels(features)
     ax.set_xlabel('Importance')
-    ax.set_ylabel('Feature')
-    ax.set_title(f'Feature Importance: {importance_type}')
+    ax.set_title('Feature Importance ({})'.format(importance_type))
     fig.tight_layout()
     return fig
 
 
 def plot_label_share(labels):
+    """
+    Plot label share as a bar chart.
+    """
     unique, counts = np.unique(labels, return_counts=True)
-
     counts_norm = counts / counts.sum()
+
     fig, ax = plt.subplots()
     bar = sns.barplot(unique, counts_norm)
     for idx, p in enumerate(bar.patches):
@@ -136,17 +158,19 @@ def plot_label_share(labels):
     return fig
 
 
-def plot_eval_history(eval_results):
+def plot_eval_results(eval_results):
+    """
+    Plot evaluation results for XGBoost and LightGBM.
+    """
     fig, ax = plt.subplots()
-    for fold_idx, eval_result in enumerate(eval_results):
-        for data_name, metrics in eval_result.items():
+    for fold_idx, evals in enumerate(eval_results):
+        for data_name, metrics in evals.items():
             for metric_name, values in metrics.items():
                 label = f'{data_name}-{metric_name}-{fold_idx}'
                 ax.plot(values, label=label, zorder=1)[0]
-                # ax.scatter(data['best_iteration'], data['values'][data['best_iteration'] - 1],
-                #            s=60, c=[line.get_color()], edgecolors='k', linewidths=1, zorder=2)
+
     ax.set_xlabel('Iteration')
-    ax.set_title('Evaluation History (marker on each line represents the best iteration)')
+    ax.set_title('Evaluation History')
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     fig.tight_layout()
     return fig

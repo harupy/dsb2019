@@ -1,3 +1,7 @@
+"""
+Utility functions for numpy array.
+"""
+
 import numpy as np
 
 

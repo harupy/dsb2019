@@ -1,3 +1,7 @@
+"""
+Utility functions for input/output.
+"""
+
 import os
 import json
 import yaml
@@ -158,6 +162,10 @@ def save_features_meta(data, name):
 def find_features_meta(name):
     """
     Find features meta data (dict). If the meta data file is not found, return None.
+
+    Notes
+    -----
+    Meta data is used to select or drop columns when training.
     """
     fpath = os.path.join(FTR_DIR, name, 'meta.json')
     if not os.path.exists(fpath):
