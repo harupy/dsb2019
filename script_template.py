@@ -5,11 +5,12 @@ import base64
 from pathlib import Path
 import pandas as pd
 
-GIT_HASH = {{git_hash}}
 
 SCRIPTS = {{scripts}}
 
 CONFIG = {{config}}
+
+GIT_HASH = "{{git_hash}}"
 
 
 def skip_commit_run():
