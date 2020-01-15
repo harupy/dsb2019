@@ -143,3 +143,5 @@ mlruns/
 # data
 input/
 *.csv
+
+script.py
