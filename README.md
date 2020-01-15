@@ -24,7 +24,7 @@ Train
 - Cases where sessions have 1 previous assessment: ~15%
 - Cases where sessions have 2 or more previous assessments: ~65%
 
-Test
+Test (the private set might have different distribution.)
 
 - Cases where sessions have no previous assessment: ~43%
 - Cases where sessions have 1 previous assessment: ~19%
@@ -44,3 +44,15 @@ https://www.kaggle.com/c/data-science-bowl-2019/discussion/114783#679024
 https://www.kaggle.com/c/data-science-bowl-2019/discussion/122149#697661
 
 > For validation only. Truncating for training gave bad results in my case.
+
+## Didn't work
+
+- using 4020 attempts
+- augment training data with test
+-
+
+## Worked
+
+- Using `title` as `categorical_feature`.
+- Truncation (use one assessment for each `installation_id`).
+- `percentile_boundaries` (increased the public LB score, but this forces predicted labels to have the same distribution as the train set. The private set might have different label distribution.)

@@ -1,3 +1,7 @@
+"""
+Functions to manipulate features.
+"""
+
 import numpy as np
 from sklearn.metrics import mean_squared_error
 
@@ -6,16 +10,22 @@ from utils.dataframe import prefix_columns, concat_dfs
 
 
 def is_assessment(df):
+    """
+    Detect assessments.
+    """
     return df['type'].eq('Assessment')
 
 
 def filter_assessment(df):
+    """
+    Filter assessments.
+    """
     return df[is_assessment(df)]
 
 
 def is_assessment_attempt(df, is_test=False):
     """
-    Detect assessments.
+    Detect assessment attempts.
 
     Examples
     --------
@@ -45,15 +55,15 @@ def is_assessment_attempt(df, is_test=False):
     """
     return (
         (df['title'].eq('Bird Measurer (Assessment)') & df['event_code'].eq(4110)) |
-        (df['title'].ne('Bird Measurer (Assessment)') & df['event_code'].eq(4100)) |
-        (is_test & df['installation_id'].ne(df['installation_id'].shift(-1))) &
+        (df['title'].ne('Bird Measurer (Assessment)') & df['event_code'].eq(4100)) &
         df['type'].eq('Assessment')
+        # (is_test & df['installation_id'].ne(df['installation_id'].shift(-1)))
     )
 
 
 def filter_assessment_attempt(df):
     """
-    Filter assessment records.
+    Filter assessment attempts.
     """
     return df[is_assessment_attempt(df)].reset_index(drop=True)
 
@@ -61,6 +71,10 @@ def filter_assessment_attempt(df):
 def get_attempt_result(df):
     """
     Get attempt result (true: 1, false: 0).
+
+    Notes
+    -----
+    This function might extract attempt results from non-assessment sessions.
 
     Examples
     --------
@@ -159,6 +173,17 @@ def hist_mse(train, test, adjust=False, plot=False):
 
 
 def adjust_distribution(train, test):
+    """
+    Adjust distribution between train and test data.
+
+    Note
+    ----
+    The private set might have similar distribution to the train data.
+
+    Discussion
+    ----------
+    https://www.kaggle.com/c/data-science-bowl-2019/discussion/125258
+    """
     to_remove = []
     ignore = ['accuracy_group', 'installation_id', 'accuracy_group', 'title']
     test_adjusted = test.copy()
@@ -184,6 +209,13 @@ def adjust_distribution(train, test):
 
 
 def calc_attempt_stats(df, keep_title=False):
+    """
+    Calculate the following by assessment game session:
+    - num_correct
+    - num_incorrect
+    - accuracy
+    - accuracy group
+    """
 
     aggs = {
         'attempt_result': [
@@ -207,6 +239,10 @@ def calc_attempt_stats(df, keep_title=False):
 
 
 def cum_by_user(df, funcs, is_test=False):
+    """
+    Apply cumulative operation by user.
+    """
+
     def take_cum(gdf):
         """
         A function to apply to each group dataframe.

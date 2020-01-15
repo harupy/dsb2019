@@ -1,5 +1,5 @@
 """
-Utility functions for pandas dataframe.
+Functions for pandas dataframe.
 """
 
 from functools import reduce
@@ -8,6 +8,9 @@ import pandas as pd
 
 
 def reduce_mem_usage(df, verbose=True):
+    """
+    Reduce the memory usage of given dataframe by converting each column into the appropriate data type.
+    """
     numeric_dtypes = ['int8', 'int16', 'int32', 'int64',
                       'float16', 'float32', 'float64']
     mem_before = df.memory_usage().sum() / 1024**2
@@ -44,7 +47,7 @@ def reduce_mem_usage(df, verbose=True):
 
 def apply_funcs(df, funcs):
     """
-    Apply functions to a dataframe.
+    Apply multiple functions to given dataframe.
 
     Examples
     --------
@@ -61,7 +64,7 @@ def apply_funcs(df, funcs):
 
 def concat_dfs(dfs, axis):
     """
-    Concatenate multiple dataframes.
+    Concatenate multiple dataframes along specified axis.
 
     Examples
     --------
@@ -124,8 +127,14 @@ def suffix_columns(df, suffix, sep='_', exclude=None):
 
 
 def assert_columns_equal(left, right):
+    """
+    Assert left and right have the same columns.
+    """
     assert left.columns.tolist() == right.columns.tolist()
 
 
 def find_constant_columns(df):
+    """
+    Returns constant columns of given dataframe.
+    """
     return df.loc[:, (df == df.iloc[0]).all()].columns.tolist()

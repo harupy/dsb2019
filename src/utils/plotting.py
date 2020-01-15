@@ -1,11 +1,11 @@
 """
-Utility functions for plotting.
+Functions for plotting.
 """
-
 
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import lightgbm as lgb
 
 sns.set()
 
@@ -172,5 +172,15 @@ def plot_eval_results(eval_results):
     ax.set_xlabel('Iteration')
     ax.set_title('Evaluation History')
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    fig.tight_layout()
+    return fig
+
+
+def plot_tree(model):
+    """
+    Plot tree structure of give model.
+    """
+    fig, ax = plt.subplots(1, 1, figsize=(15, 15), dpi=700)
+    lgb.plot_tree(model, tree_index=0, show_info=['split_gain'], ax=ax)
     fig.tight_layout()
     return fig

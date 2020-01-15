@@ -1,21 +1,29 @@
+"""
+Cleaner version of this kernel: https://www.kaggle.com/braquino/convert-to-regression.
+"""
+
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utils.io import read_from_clean, save_features
+from utils.io import read_from_clean, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
+from utils.dataframe import assert_columns_equal
 from features.funcs import (classify_accuracy,
                             filter_assessment,
                             filter_assessment_attempt,
-                            find_highly_correlated_features,
                             move_id_front)
 
 
-def build_encoders(train, test, cols):
+def create_encoders(train, test, cols):
     """
-    >>> train = pd.DataFrame({'a': ['x', 'y']})
-    >>> test = pd.DataFrame({'a': ['z']})
-    >>> build_encoders(train, test, ['a'])
+    Create one-hot encoders as a dict where each item represents (col-to-encode, encoder).
+
+    Examples
+    --------
+    >> > train = pd.DataFrame({'a': ['x', 'y']})
+    >> > test = pd.DataFrame({'a': ['z']})
+    >> > create_encoders(train, test, ['a'])
     {'a': {'x': 0, 'y': 1, 'z': 2}}
 
     """
@@ -29,22 +37,28 @@ def build_encoders(train, test, cols):
 
 def make_counter(keys, init_value=0):
     """
-    >>> make_counter(['a', 'b'])
+    Make a counter with given keys and initial value.
+
+    Examples
+    --------
+    >> > make_counter(['a', 'b'])
     {'a': 0, 'b': 0}
 
-    >>> make_counter(['a', 'b'], -1)
+    >> > make_counter(['a', 'b'], -1)
     {'a': -1, 'b': -1}
 
     """
     return {key: init_value for key in keys}
 
 
-def safe_div(n, d, ):
+def safe_div(n, d):
     """
-    >>> safe_div(1, 2)
+    Return n / d if d is not 0 otherwise 0.
+
+    >> > safe_div(1, 2)
     0.5
 
-    >>> safe_div(1, 0)
+    >> > safe_div(1, 0)
     0
 
     """
@@ -57,6 +71,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
     accumulated_accuracy = 0
     accumulated_correct_attempts = 0
     accumulated_incorrect_attempts = 0
+    accumulated_total_attempts = 0
     accumulated_actions = 0
     assessment_count = 0
     durations = []
@@ -106,9 +121,12 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features['title'] = encoders['title'][title]
             features['accumulated_correct_attempts'] = accumulated_correct_attempts
             features['accumulated_incorrect_attempts'] = accumulated_incorrect_attempts
+            features['accumulated_total_attempts'] = accumulated_incorrect_attempts
+            features['is_first_assessment'] = (accumulated_total_attempts == 0)
 
             accumulated_correct_attempts += correct_attempts
             accumulated_incorrect_attempts += incorrect_attempts
+            accumulated_total_attempts += total_attempts
 
             features['duration_mean'] = np.mean(durations) if durations else 0
             features['duration_std'] = np.std(durations) if durations else 0
@@ -121,6 +139,8 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             last_accuracy_title['acc_' + title] = accuracy
 
             accuracy_group = classify_accuracy(accuracy)
+            # don't forget add accuracy and accuracy_group as drop_cols in meta data.
+            features['accuracy'] = accuracy
             features['accuracy_group'] = accuracy_group
             features.update(accuracy_groups)
             accuracy_groups[f'acg_{accuracy_group}'] += 1
@@ -157,6 +177,9 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
 
 
 def get_train_and_test(train, test, encoders, assess_titles):
+    """
+    Create train and test data.
+    """
     assessments_train = []
     assessments_test = []
     for ins_id, user_sample in tqdm(train.groupby('installation_id', sort=False)):
@@ -164,7 +187,7 @@ def get_train_and_test(train, test, encoders, assess_titles):
 
     for ins_id, user_sample in tqdm(test.groupby('installation_id', sort=False)):
         test_data = process_user_sample(user_sample, encoders, assess_titles, is_test_set=True)
-        sessions_test.append(test_data)
+        assessments_test.append(test_data)
 
     return pd.DataFrame(assessments_train), pd.DataFrame(assessments_test)
 
@@ -174,17 +197,17 @@ def main():
     train = read_from_clean('train.ftr')
     test = read_from_clean('test.ftr')
 
-    # convert timestamp
+    # convert timestamp from string to datetime.
     train['timestamp'] = pd.to_datetime(train['timestamp'])
     test['timestamp'] = pd.to_datetime(test['timestamp'])
 
-    # add 'title_event_code'
+    # add 'title_event_code'.
     train['title_event_code'] = train['title'] + '_' + train['event_code'].astype(str)
     test['title_event_code'] = test['title'] + '_' + test['event_code'].astype(str)
 
-    # build label encoders
+    # build label encoders.
     cols_enc = ['title', 'event_code', 'title_event_code', 'event_id', 'world', 'type']
-    encoders = build_encoders(train, test, cols_enc)
+    encoders = create_encoders(train, test, cols_enc)
     assess_titles = filter_assessment(train)['title'].unique()
 
     train, test = get_train_and_test(train, test, encoders, assess_titles)
@@ -193,7 +216,7 @@ def main():
     train = move_id_front(train)
     test = move_id_front(test)
 
-    # assert accuracy_group is correct.
+    # assert calculated accuracy_group equals to the true values.
     train_labels = read_from_clean('train_labels.ftr')
     cols = ['installation_id', 'game_session', 'accuracy_group']
     merged = pd.merge(train_labels[cols], train[cols],
@@ -203,8 +226,10 @@ def main():
                                    check_dtype=False, check_names=False)
 
     name = remove_dir_ext(__file__)
+    assert_columns_equal(train, test)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
+    save_features_meta({'drop_cols': ['accuracy', 'accuracy_group']}, name)
 
 
 if __name__ == '__main__':

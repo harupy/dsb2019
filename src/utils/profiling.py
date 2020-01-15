@@ -14,7 +14,7 @@ TEMPLATE_PATH = 'src/utils/profile_template.ipynb'
 
 def parse_args():
     """
-    Parse the command line arguments.
+    Parse command line arguments.
     """
     parser = argparse.ArgumentParser(description='Make a profile')
     parser.add_argument('-d', '--data-dir', required=True, help='Data directory')
@@ -23,7 +23,7 @@ def parse_args():
 
 def search_by_ext(top, ext):
     """
-    Search files by extension under the specified diretory.
+    Search files by extension under given directory.
     """
     result = []
     for root, dirs, files in os.walk(top):
@@ -35,15 +35,15 @@ def search_by_ext(top, ext):
 
 
 def execute_notebook(nb_path):
+    """
+    Execute a jupyter notebook.
+    """
     command = f'jupyter nbconvert --ExecutePreprocessor.timeout=6000 --execute --inplace {nb_path}'
     os.system(command)
 
 
 def make_profiles(dir_or_path):
-    # read template source.
-    with open(TEMPLATE_PATH, 'r') as f:
-        template_src = f.read()
-
+    # search target data to make profiles of.
     ext = ['.csv', '.ftr']
     if os.path.isdir(dir_or_path):
         files = search_by_ext(dir_or_path, ext)
@@ -52,6 +52,10 @@ def make_profiles(dir_or_path):
         files = [dir_or_path]
 
     num_files = len(files)
+
+    # read notebook template.
+    with open(TEMPLATE_PATH, 'r') as f:
+        template_src = f.read()
 
     for file_idx, fpath in enumerate(files):
         print('\n---------- Executing {} ({}/{}) ----------\n'

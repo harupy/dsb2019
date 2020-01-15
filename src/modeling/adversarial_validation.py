@@ -5,9 +5,10 @@ import re
 import tempfile
 import numpy as np
 import pandas as pd
-import lightgbm as lgb
 from sklearn.metrics import confusion_matrix
-from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
+import lightgbm as lgb
+
 
 from utils.common import remove_dir_ext, prefix_list, print_divider
 from utils.io import (read_config,
@@ -16,17 +17,15 @@ from utils.io import (read_config,
                       read_features,
                       save_features,
                       find_features_meta)
-from utils.dataframe import assert_columns_equal, find_constant_columns, apply_funcs
+from utils.dataframe import find_constant_columns, apply_funcs
 from utils.plotting import (plot_importance,
                             plot_label_share,
                             plot_confusion_matrix,
-                            plot_eval_results)
-from utils.metrics import qwk, digitize, OptimizedRounder
-from utils.kernel import on_kaggle_kernel
+                            plot_eval_results,
+                            plot_tree)
 from features.funcs import find_highly_correlated_features, adjust_distribution
 from modeling.funcs import (get_cv,
-                            average_feature_importance,
-                            predict_average)
+                            average_feature_importance)
 
 
 def parse_args():
@@ -39,7 +38,7 @@ def parse_args():
 
 
 def train_cv(config, X, y, inst_ids, cv):
-    oof_pred = np.zeros(len(X))
+    oof_proba = np.zeros(len(X))
     models = []
     eval_results = []
     num_seeds = len(config['seeds'])
@@ -51,24 +50,6 @@ def train_cv(config, X, y, inst_ids, cv):
             X_trn, X_val = X.iloc[idx_trn], X.iloc[idx_val]
             y_trn, y_val = y[idx_trn], y[idx_val]
 
-            # for truncation
-            inst_ids_trn = inst_ids[idx_trn]
-            inst_ids_val = inst_ids[idx_val]
-
-            assert inst_ids_trn.index.equals(X_trn.index)
-            assert inst_ids_val.index.equals(X_val.index)
-
-            # some users in the train set have multiple assessments.
-            # lines below sample one assessment from each user.
-            mask_trn = random_truncation(inst_ids_trn, seed)
-            assert inst_ids_trn[mask_trn].is_unique
-            X_trn = X_trn.loc[mask_trn]
-            y_trn = y_trn.loc[mask_trn]
-
-            # mask_val = random_sample(inst_ids_val, seed)
-            # X_val = X_val.loc[mask_val.index]
-            # y_val = y_val.loc[mask_val.index]
-
             trn_set = lgb.Dataset(X_trn, y_trn)
             val_set = lgb.Dataset(X_val, y_val)
 
@@ -78,11 +59,11 @@ def train_cv(config, X, y, inst_ids, cv):
                               valid_names=['train', 'valid'],
                               callbacks=[lgb.record_evaluation(eval_result)],
                               **config['fit'])
-            oof_pred[idx_val] += model.predict(X_val) / num_seeds
+            oof_proba[idx_val] += model.predict(X_val) / num_seeds
             models.append(model)
             eval_results.append(eval_result)
 
-    return models, eval_results, oof_pred
+    return models, eval_results, oof_proba
 
 
 def flatten_features(features):
@@ -115,31 +96,6 @@ def flatten_features(features):
     return result
 
 
-def random_truncation(inst_ids, seed):
-    """
-    Create a mask that samples one assessment from each installation_id.
-    """
-    return shuffle(inst_ids, random_state=seed).drop_duplicates(keep='first').index
-
-
-def percentile_boundaries(accuracy_group, pred):
-    """
-    Compute round boundaries from the percentile of training accuracy_group.
-
-    Note
-    ----
-    This function
-    """
-    freq_norm = accuracy_group.value_counts(normalize=True).sort_index()
-    acc = 0
-    bounds = []
-    for key, val in list(freq_norm.items())[:-1]:  # ignore the last item.
-        acc += val
-        bounds.append(np.percentile(pred, 100 * acc))
-
-    return bounds
-
-
 def apply_meta(df, meta):
     """
     Apply operations specified in meta data to given dataframe.
@@ -158,6 +114,7 @@ def apply_meta(df, meta):
 def main():
     args = parse_args()
     labels = read_from_raw('train_labels.csv')
+    # labels = read_from_clean('train_labels_pseudo.ftr')
     train = labels.copy()
     train = train[['installation_id', 'game_session', 'accuracy_group']]
 
@@ -219,54 +176,24 @@ def main():
     test.columns = [re.sub(non_alphanumeric, '_', c).strip('_') for c in test.columns]
 
     # prepare train and test data
+    train = pd.concat([train.sample(frac=0.5).assign(target=0), test.assign(target=1)],
+                      axis=0, ignore_index=True)
     inst_ids_train = train['installation_id']  # keep installation_id for group k fold
-    X_train = train.drop(['installation_id', 'game_session', 'accuracy_group'], axis=1)
-    y_train = train['accuracy_group']
-    X_test = test.drop('installation_id', axis=1)
+    X_train = train.drop(['installation_id', 'game_session', 'accuracy_group', 'target'], axis=1)
+    y_train = train['target']
 
     del train, test
-
-    # assert train and test data have the same columns.
-    assert_columns_equal(X_train, X_test)
 
     # prepare cv generator
     cv = get_cv(config)
 
-    models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
+    models, eval_results, oof_proba = train_cv(config, X_train, y_train, inst_ids_train, cv)
+    oof_pred = (oof_proba > 0.5).astype(np.int8)
 
     # feature importance
     feature_names = np.array(models[0].feature_name())
     imp_split = average_feature_importance(models, 'split')
     imp_gain = average_feature_importance(models, 'gain')
-
-    # optimize round boundaries.
-    opt = OptimizedRounder()
-    opt.fit(y_train, oof_pred)
-    oof_pred_round = opt.predict(oof_pred)
-    QWK = qwk(y_train, oof_pred_round)
-    bounds = opt.boundaries.tolist()
-    print('boundaries (OptimizedRounder):', bounds)
-    print('QWK:', QWK)
-
-    avg_proba = predict_average(models, X_test)
-    # pred = opt.predict(avg_proba)
-
-    bounds = percentile_boundaries(y_train, avg_proba)
-    pred = digitize(avg_proba, bounds)
-    print('boundaries (percentile_boundaries):', bounds)
-
-    # assert pred does not contain invalid values
-    assert (~np.isnan(pred)).all(), 'NaN should not be included.'
-    assert np.isin(pred, [0, 1, 2, 3]).all(), 'Predicted value must be one of [0, 1, 2, 3]'
-
-    # make submission file
-    sbm['accuracy_group'] = pred
-    sbm.to_csv('submission.csv', index=False)
-    assert os.path.exists('submission.csv')
-
-    # on kaggle kernel, ignore mlflow logging.
-    if on_kaggle_kernel():
-        return
 
     import mlflow
 
@@ -277,7 +204,7 @@ def main():
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = tempfile.mkdtemp()
             fpath = os.path.join(tmpdir, fname)
-            fig.savefig(fpath, dpi=200)
+            fig.savefig(fpath)
             mlflow.log_artifact(fpath)
 
     # create mlflow experiment using the config name if not exists.
@@ -288,17 +215,13 @@ def main():
     with mlflow.start_run():
         mlflow.log_artifact(args.config)
 
-        mlflow.log_params({'boundaries': bounds})
-        mlflow.log_metrics({'qwk': QWK})
-
         # log plots
-        cm = confusion_matrix(y_train, oof_pred_round)
+        cm = confusion_matrix(y_train, oof_pred)
         log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
         log_figure(plot_eval_results(eval_results), 'eval_history.png')
-
-        # log label share
         log_figure(plot_label_share(y_train), 'train_label_share.png')
-        log_figure(plot_label_share(pred), 'pred_label_share.png')
+        log_figure(plot_label_share(oof_pred), 'pred_label_share.png')
+        log_figure(plot_tree(models[0]), 'tree.png')
 
         for imp, imp_type in zip([imp_split, imp_gain], ['split', 'gain']):
             fig = plot_importance(feature_names, imp, imp_type, 30)

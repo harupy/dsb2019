@@ -1,15 +1,13 @@
 """
-Augment the training data with assessments in the test data.
+game_session_stats.py use all assessments, but some of them don't contain attempts.
+This script excludes those assessments when calculating features related to accuracy.
 """
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utils.io import (read_from_clean,
-                      save_to_clean,
-                      save_features,
-                      save_features_meta)
+from utils.io import read_from_clean, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
 from utils.dataframe import assert_columns_equal
 from features.funcs import (classify_accuracy,
@@ -20,9 +18,13 @@ from features.funcs import (classify_accuracy,
 
 def create_encoders(train, test, cols):
     """
-    >>> train = pd.DataFrame({'a': ['x', 'y']})
-    >>> test = pd.DataFrame({'a': ['z']})
-    >>> create_encoders(train, test, ['a'])
+    Create one-hot encoders as a dict where each item represents (col-to-encode, encoder).
+
+    Examples
+    --------
+    >> > train = pd.DataFrame({'a': ['x', 'y']})
+    >> > test = pd.DataFrame({'a': ['z']})
+    >> > create_encoders(train, test, ['a'])
     {'a': {'x': 0, 'y': 1, 'z': 2}}
 
     """
@@ -36,22 +38,28 @@ def create_encoders(train, test, cols):
 
 def make_counter(keys, init_value=0):
     """
-    >>> make_counter(['a', 'b'])
+    Make a counter with given keys and initial value.
+
+    Examples
+    --------
+    >> > make_counter(['a', 'b'])
     {'a': 0, 'b': 0}
 
-    >>> make_counter(['a', 'b'], -1)
+    >> > make_counter(['a', 'b'], -1)
     {'a': -1, 'b': -1}
 
     """
     return {key: init_value for key in keys}
 
 
-def safe_div(n, d, ):
+def safe_div(n, d):
     """
-    >>> safe_div(1, 2)
+    Return n / d if d is not 0 otherwise 0.
+
+    >> > safe_div(1, 2)
     0.5
 
-    >>> safe_div(1, 0)
+    >> > safe_div(1, 0)
     0
 
     """
@@ -90,6 +98,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             correct_attempts = attempts['event_data'].str.contains('true').sum()
             incorrect_attempts = attempts['event_data'].str.contains('false').sum()
             total_attempts = correct_attempts + incorrect_attempts
+            has_attempt = total_attempts > 0
 
             features = user_activities_count.copy()
             features.update(last_accuracy_title)
@@ -111,6 +120,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features['installation_id'] = session['installation_id'].iloc[-1]
             features['game_session'] = session['game_session'].iloc[-1]
             features['title'] = encoders['title'][title]
+
             features['accumulated_correct_attempts'] = accumulated_correct_attempts
             features['accumulated_incorrect_attempts'] = accumulated_incorrect_attempts
 
@@ -123,6 +133,8 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             durations.append((session['timestamp'].iloc[-1] - session['timestamp'].iloc[0]).seconds)
 
             features['accumulated_accuracy'] = safe_div(accumulated_accuracy, assessment_count)
+
+            # exclude assessments withtout attempts.
             accuracy = safe_div(correct_attempts, total_attempts)
             accumulated_accuracy += accuracy
             last_accuracy_title['acc_' + title] = accuracy
@@ -131,9 +143,10 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features['accuracy'] = accuracy
             features['accuracy_group'] = accuracy_group
             features.update(accuracy_groups)
-            accuracy_groups[f'acg_{accuracy_group}'] += 1
+            accuracy_groups[f'acg_{accuracy_group}'] += 1 if has_attempt else 0
             features['accumulated_accuracy_group'] = safe_div(accumulated_accuracy_group, assessment_count)
             accumulated_accuracy_group += accuracy_group
+
             features['accumulated_actions'] = accumulated_actions
 
             if is_test_set:
@@ -141,7 +154,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             elif total_attempts > 0:
                 all_assessments.append(features)
 
-            assessment_count += 1
+            assessment_count += 1 if has_attempt else 0
 
         session_count += 1
 
@@ -165,13 +178,12 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
 
 
 def get_train_and_test(train, test, encoders, assess_titles):
+    """
+    Create train and test data.
+    """
     assessments_train = []
     assessments_test = []
     for ins_id, user_sample in tqdm(train.groupby('installation_id', sort=False)):
-        assessments_train += process_user_sample(user_sample, encoders, assess_titles)
-
-    # add assessments in the test data to the train data.
-    for ins_id, user_sample in tqdm(test.groupby('installation_id', sort=False)):
         assessments_train += process_user_sample(user_sample, encoders, assess_titles)
 
     for ins_id, user_sample in tqdm(test.groupby('installation_id', sort=False)):
@@ -186,15 +198,15 @@ def main():
     train = read_from_clean('train.ftr')
     test = read_from_clean('test.ftr')
 
-    # convert timestamp
+    # convert timestamp from string to datetime.
     train['timestamp'] = pd.to_datetime(train['timestamp'])
     test['timestamp'] = pd.to_datetime(test['timestamp'])
 
-    # add 'title_event_code'
+    # add 'title_event_code'.
     train['title_event_code'] = train['title'] + '_' + train['event_code'].astype(str)
     test['title_event_code'] = test['title'] + '_' + test['event_code'].astype(str)
 
-    # build label encoders
+    # build label encoders.
     cols_enc = ['title', 'event_code', 'title_event_code', 'event_id', 'world', 'type']
     encoders = create_encoders(train, test, cols_enc)
     assess_titles = filter_assessment(train)['title'].unique()
@@ -205,7 +217,7 @@ def main():
     train = move_id_front(train)
     test = move_id_front(test)
 
-    # assert accuracy_group is correct.
+    # assert calculated accuracy_group equals to the true values.
     train_labels = read_from_clean('train_labels.ftr')
     cols = ['installation_id', 'game_session', 'accuracy_group']
     merged = pd.merge(train_labels[cols], train[cols],
@@ -213,13 +225,11 @@ def main():
     pd.testing.assert_series_equal(merged[cols[-1] + '_x'],
                                    merged[cols[-1] + '_y'],
                                    check_dtype=False, check_names=False)
-    train_labels_pseudo = train[cols]
 
     name = remove_dir_ext(__file__)
     assert_columns_equal(train, test)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
-    save_to_clean(train_labels_pseudo, 'train_labels_pseudo.ftr')
     save_features_meta({'drop_cols': ['accuracy', 'accuracy_group']}, name)
 
 

@@ -1,5 +1,5 @@
 """
-Utility functions for numpy array.
+Functions for numpy array operations.
 """
 
 import numpy as np
@@ -7,7 +7,7 @@ import numpy as np
 
 def div_by_sum(x):
     """
-    Divide an array by its sum.
+    Divide a numpy array by its sum.
 
     Examples
     --------
@@ -21,7 +21,7 @@ def div_by_sum(x):
 
 def shift_array(arr, num, fill_value=np.nan):
     """
-    Shift a numpy array.
+    Shift a numpy array by specified number.
 
     Parameters
     ----------

@@ -1,5 +1,5 @@
 config = {
-  # note: lgb.train(params, ..., **fit_params)
+  # lgb.train(params, ..., **fit_params)
   'params': {
     'boosting_type': 'gbdt',
     'objective': 'regression',

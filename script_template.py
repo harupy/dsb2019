@@ -5,10 +5,12 @@ import base64
 from pathlib import Path
 import pandas as pd
 
+GIT_HASH = {{git_hash}}
 
 SCRIPTS = {{scripts}}
 
 CONFIG = {{config}}
+
 
 def skip_commit_run():
     # skip the commit run (https://www.kaggle.com/onodera/skip-1st-run).

@@ -10,13 +10,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 def build_one_hot_encoder(train, test, cols):
     """
-    Build a one-hot encoder from the given train and test dataframe.
-
-    Returns
-    -------
-    sklearn.preprocessing.OneHotEncoder
-        Fitted one-hot encodoer
-
+    Build one-hot encoder from given train and test dataframes.
     """
     merged = train[cols].append(test[cols]).astype(str)
     encoder = OneHotEncoder(dtype=np.int8)
@@ -25,15 +19,13 @@ def build_one_hot_encoder(train, test, cols):
 
 def apply_one_hot_encoder(df, encoder, cols, drop=False):
     """
-    Apply a one-hot encoder to the given dataframe.
+    Apply one-hot encoder to given dataframe.
     """
-
     categories = get_categories(encoder)
 
     # without index, pd.concat does not work properly.
     encoded = pd.DataFrame(encoder.transform(df[cols].astype(str)).toarray(),
                            index=df.index, columns=categories,)
-
     if drop:
         return pd.concat([df.drop(cols, axis=1), encoded], axis=1)
     else:
@@ -41,6 +33,9 @@ def apply_one_hot_encoder(df, encoder, cols, drop=False):
 
 
 def get_categories(encoder):
+    """
+    Get categories of given encoder.
+    """
     cats = reduce(lambda lst, cat: lst + cat.tolist(), encoder.categories_, [])
 
     # find duplicated values

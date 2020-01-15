@@ -1,6 +1,6 @@
 
 """
-Utility functions for metrics.
+Functions for metrics.
 """
 
 
@@ -13,11 +13,9 @@ from numba import jit
 @jit
 def qwk(a1, a2):
     """
-    Source: https://www.kaggle.com/c/data-science-bowl-2019/discussion/114133#latest-660168
+    Compute quadratic weighted kappa.
 
-    :param a1:
-    :param a2:
-    :return:
+    https://www.kaggle.com/c/data-science-bowl-2019/discussion/114133#latest-660168
     """
     max_rat = 3
     a1 = np.asarray(a1, dtype=int)

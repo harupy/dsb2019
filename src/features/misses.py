@@ -7,6 +7,8 @@ from features.funcs import cum_by_user
 
 def extract_misses(df):
     """
+    Extract misses value from event_data in given dataframe.
+
     >>> df = pd.DataFrame({
     ...     'event_data': ['"misses":1', '"misses":0', ''],
     ... })
@@ -28,7 +30,7 @@ def main():
     train = train.assign(misses=extract_misses)
     test = test.assign(misses=extract_misses)
 
-    # The sum of an all-NA or empty Series is 0 by default.
+    # For all-NA or empty Series return np.nan otherwise sum.
     aggs = {'misses': lambda s: np.nan if s.isnull().all() else s.sum()}
     by = ['installation_id', 'game_session']
     train = train.groupby(by, sort=False).agg(aggs).reset_index()

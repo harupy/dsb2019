@@ -5,6 +5,7 @@ from functools import reduce
 import base64
 import gzip
 from pathlib import Path
+import git
 
 from utils.io import read_config
 
@@ -33,7 +34,20 @@ def search_by_ext(top, ext):
     return ret
 
 
+def get_git_hash():
+    return git.Repo().head.object.hexsha
+
+
+def is_changed():
+    changes = [item.a_path for item in git.Repo().index.diff(None)]
+    return len(changes) != 0
+
+
 def build_script():
+    if is_changed():
+        print('Detect changes. Please commit them before building the script.')
+        exit()
+
     args = parse_args()
     config = read_config(args.config)
     to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), ['src', 'configs'], [])
@@ -41,6 +55,7 @@ def build_script():
     template = Path('script_template.py').read_text('utf8')
     Path('script.py').write_text(
         (template
+         .replace('{{git_hash}}', get_git_hash())
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
          .replace('{{config}}', json.dumps(config, indent=2))
          .replace('{{config_path}}', args.config)
