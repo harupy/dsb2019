@@ -23,10 +23,11 @@ from utils.plotting import (plot_importance,
                             plot_eval_results)
 from utils.metrics import qwk, digitize, OptimizedRounder
 from utils.kernel import on_kaggle_kernel
-from features.funcs import find_highly_correlated_features, adjust_distribution
-from modeling.funcs import (get_cv,
+from utils.modeling import (get_cv,
                             average_feature_importance,
                             predict_average)
+
+from features.funcs import find_highly_correlated_features, adjust_distribution
 
 
 def parse_args():
@@ -39,6 +40,9 @@ def parse_args():
 
 
 def train_cv(config, X, y, inst_ids, cv):
+    """
+    Perform cross-validation with given configuration.
+    """
     oof_pred = np.zeros(len(X))
     models = []
     eval_results = []
@@ -46,26 +50,28 @@ def train_cv(config, X, y, inst_ids, cv):
 
     for seed_idx, seed in enumerate(config['seeds']):
         config['params'].update({'random_state': seed})
+        X, y, inst_ids = shuffle(X, y, inst_ids, random_state=seed)
         for fold_idx, (idx_trn, idx_val) in enumerate(cv.split(X, y, inst_ids)):
             print_divider(f'Seed: {seed_idx} / Fold: {fold_idx}')
             X_trn, X_val = X.iloc[idx_trn], X.iloc[idx_val]
-            y_trn, y_val = y[idx_trn], y[idx_val]
+            y_trn, y_val = y.iloc[idx_trn], y.iloc[idx_val]
 
             # for truncation
-            inst_ids_trn = inst_ids[idx_trn]
-            inst_ids_val = inst_ids[idx_val]
+            inst_ids_trn = inst_ids.iloc[idx_trn]
+            inst_ids_val = inst_ids.iloc[idx_val]
 
+            assert len(set(inst_ids_trn).intersection(set(inst_ids_val))) == 0
             assert inst_ids_trn.index.equals(X_trn.index)
             assert inst_ids_val.index.equals(X_val.index)
 
-            # some users in the train set have multiple assessments.
-            # lines below sample one assessment from each user.
+            # # some users in the train set have multiple assessments.
+            # # lines below sample one assessment from each user.
             mask_trn = random_truncation(inst_ids_trn, seed)
             assert inst_ids_trn[mask_trn].is_unique
             X_trn = X_trn.loc[mask_trn]
             y_trn = y_trn.loc[mask_trn]
 
-            # mask_val = random_sample(inst_ids_val, seed)
+            # # mask_val = random_sample(inst_ids_val, seed)
             # X_val = X_val.loc[mask_val.index]
             # y_val = y_val.loc[mask_val.index]
 
@@ -78,7 +84,8 @@ def train_cv(config, X, y, inst_ids, cv):
                               valid_names=['train', 'valid'],
                               callbacks=[lgb.record_evaluation(eval_result)],
                               **config['fit'])
-            oof_pred[idx_val] += model.predict(X_val) / num_seeds
+
+            oof_pred[y_val.index.values] += model.predict(X_val) / num_seeds
             models.append(model)
             eval_results.append(eval_result)
 
@@ -190,8 +197,8 @@ def main():
         del train_ft, test_ft
         gc.collect()
 
-    train = train.fillna(0)
-    test = test.fillna(0)
+    train = train.reset_index(drop=False)
+    test = test.reset_index(drop=False)
 
     # remove constant columns.
     constant_columns = find_constant_columns(train)
@@ -243,21 +250,23 @@ def main():
     opt = OptimizedRounder()
     opt.fit(y_train, oof_pred)
     oof_pred_round = opt.predict(oof_pred)
-    QWK = qwk(y_train, oof_pred_round)
     bounds = opt.boundaries.tolist()
-    print('boundaries (OptimizedRounder):', bounds)
+    QWK = qwk(y_train, oof_pred_round)
+    print('----- Optimize Rounder -----')
+    print('boundaries:', bounds)
     print('QWK:', QWK)
 
-    avg_proba = predict_average(models, X_test)
-    # pred = opt.predict(avg_proba)
+    pred_avg = predict_average(models, X_test)
+    pred = opt.predict(pred_avg)
 
-    bounds = percentile_boundaries(y_train, avg_proba)
-    pred = digitize(avg_proba, bounds)
-    print('boundaries (percentile_boundaries):', bounds)
+    # bounds = percentile_boundaries(y_train, pred_avg)
+    # pred = digitize(pred_avg, bounds)
+    # print('----- Percentile Rounder -----')
+    # print('boundaries:', bounds)
 
     # assert pred does not contain invalid values
-    assert (~np.isnan(pred)).all(), 'NaN should not be included.'
-    assert np.isin(pred, [0, 1, 2, 3]).all(), 'Predicted value must be one of [0, 1, 2, 3]'
+    assert (~np.isnan(pred)).all()
+    assert np.isin(pred, [0, 1, 2, 3]).all()
 
     # make submission file
     sbm['accuracy_group'] = pred

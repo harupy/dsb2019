@@ -1,6 +1,5 @@
 """
 Some assessment session don't contain attempts (not sure why).
-This script treat them as 
 """
 
 import os

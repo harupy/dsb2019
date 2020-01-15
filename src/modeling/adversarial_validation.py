@@ -6,7 +6,6 @@ import tempfile
 import numpy as np
 import pandas as pd
 from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
 import lightgbm as lgb
 
 
@@ -24,7 +23,7 @@ from utils.plotting import (plot_importance,
                             plot_eval_results,
                             plot_tree)
 from features.funcs import find_highly_correlated_features, adjust_distribution
-from modeling.funcs import (get_cv,
+from utils.modeling import (get_cv,
                             average_feature_importance)
 
 

@@ -41,9 +41,17 @@ To address this issue, @fergusoci tried:
 
 https://www.kaggle.com/c/data-science-bowl-2019/discussion/114783#679024
 
+### Truncation
+
 https://www.kaggle.com/c/data-science-bowl-2019/discussion/122149#697661
 
 > For validation only. Truncating for training gave bad results in my case.
+
+### Misses features
+
+https://www.kaggle.com/bhavikapanara/2019-data-science-bowl-some-interesting-features#707199
+
+> What is interesting is that although the features histogram of train vs test looks somehow similar and the features are not highly correlated with other input features, the qwk score on public leaderboard is lower with this features (**went from 0.549 to 0.532**).
 
 ## Didn't work
 
@@ -56,3 +64,12 @@ https://www.kaggle.com/c/data-science-bowl-2019/discussion/122149#697661
 - Using `title` as `categorical_feature`.
 - Truncation (use one assessment for each `installation_id`).
 - `percentile_boundaries` (increased the public LB score, but this forces predicted labels to have the same distribution as the train set. The private set might have different label distribution.)
+
+## Techniques
+
+- Data profiler
+- features scripts
+- Be modular
+- doctest for small functions
+- feather
+-

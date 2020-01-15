@@ -65,7 +65,50 @@ def safe_div(n, d):
     return n / d if d != 0 else 0
 
 
+def get_daytime(hour):
+    """
+    Get day time of give hour.
+    0: morning
+    1: afternoon
+    2: evening
+    3: night
+    4: midnight
+
+    Examples
+    --------
+    >>> hours = [6, 10, 12, 14, 18, 20, 22, 23, 0, 2, 4]
+    >>> for h in hours:
+    ...     print(h, get_daytime(h))
+    6 0
+    10 0
+    12 1
+    14 1
+    18 2
+    20 2
+    22 3
+    23 3
+    0 3
+    2 4
+    4 4
+
+    """
+
+    if 6 <= hour < 12:
+        return 0
+    elif 12 <= hour < 18:
+        return 1
+    elif 18 <= hour < 22:
+        return 2
+    elif hour >= 22 or hour == 0:
+        return 3
+    else:
+        return 4
+
+
 def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False):
+    """
+    Process game sessions of a user.
+    """
     last_activity = 0
     accumulated_accuracy_group = 0
     accumulated_accuracy = 0
@@ -123,6 +166,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features['accumulated_incorrect_attempts'] = accumulated_incorrect_attempts
             features['accumulated_total_attempts'] = accumulated_incorrect_attempts
             features['is_first_assessment'] = (accumulated_total_attempts == 0)
+            features['daytime'] = get_daytime(session['timestamp'].dt.hour.iloc[0])
 
             accumulated_correct_attempts += correct_attempts
             accumulated_incorrect_attempts += incorrect_attempts
@@ -178,7 +222,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
 
 def get_train_and_test(train, test, encoders, assess_titles):
     """
-    Create train and test data.
+    Generate train and test data.
     """
     assessments_train = []
     assessments_test = []
