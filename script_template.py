@@ -5,15 +5,20 @@ import base64
 from pathlib import Path
 import pandas as pd
 
-
+# encoded source code.
 SCRIPTS = {{scripts}}
 
+# training configuration.
 CONFIG = {{config}}
 
+# git hash.
 GIT_HASH = "{{git_hash}}"
 
 
 def skip_commit_run():
+    """
+    Terminate the commit run immediately.
+    """
     # skip the commit run (https://www.kaggle.com/onodera/skip-1st-run).
     sbm = pd.read_csv('../input/data-science-bowl-2019/sample_submission.csv')
 
@@ -24,6 +29,9 @@ def skip_commit_run():
 
 
 def get_feature_scripts(features):
+    """
+    Get features scripts files.
+    """
     SCRIPTS_DIR = 'src/features'
     result = []
 
@@ -36,6 +44,9 @@ def get_feature_scripts(features):
 
 
 def run(command):
+    """
+    Execute the command (a string) in a subshell.
+    """
     with_export = 'export PYTHONPATH="${PYTHONPATH}:$(pwd):$(pwd)/src" && ' + command
     p = subprocess.Popen([with_export], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
@@ -51,6 +62,9 @@ def run(command):
 
 
 def decode_scripts(scripts):
+    """
+    Decode encoded scripts (file path -> encoded code).
+    """
     for path, encoded in scripts.items():
         print(path)
         path = Path(path)
@@ -60,15 +74,20 @@ def decode_scripts(scripts):
 
 def main():
     decode_scripts(SCRIPTS)
+
+    # print out the source code of train.py
     run('cat src/modeling/train.py')
     skip_commit_run()
 
+    # find features scripts to run from the training configuration.
     feature_scripts = get_feature_scripts(CONFIG['features'])
     feature_scripts = ['src/preprocess/clean_data.py'] + feature_scripts
 
-    for feature_script in feature_scripts:
-        run(f'python {feature_script}')
+    # generate features.
+    for features_script in feature_scripts:
+        run(f'python {features_script}')
 
+    # run training
     run('python src/modeling/train.py -c {{config_path}}')
 
 
