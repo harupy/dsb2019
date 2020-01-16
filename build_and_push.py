@@ -1,4 +1,5 @@
 import os
+import subprocess
 import argparse
 import json
 from functools import reduce
@@ -54,6 +55,23 @@ def create_kernel_meta(kernel_id, save_dir):
         'title': meta['title'].format(kernel_id),
     })
     save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
+
+
+def run(command):
+    """
+    Execute the command (a string) in a subshell.
+    """
+    p = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    stdout, stderr = p.communicate()
+    stdout = stdout.decode('utf8')
+    stderr = stderr.decode('utf8')
+
+    if stdout:
+        print('----- stdout -----\n', stdout)
+
+    # Note: warnings will be included in stderr.
+    if stderr:
+        print('----- stderr -----\n', stderr)
 
 
 def build_script():
