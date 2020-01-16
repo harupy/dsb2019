@@ -105,13 +105,14 @@ def build_and_push():
     timestamp = get_timestamp()
     commit_hash = get_commit_hash()
     save_dir = f'{parent_dir}/{timestamp}_{commit_hash}'
+    filename = f'{commit_hash}.py'
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
     # build a runner script.
     template = Path(f'{parent_dir}/script_template.py').read_text('utf8')
-    script_path = f'{save_dir}/{commit_hash}.py'
+    script_path = f'{save_dir}/{filename}'
     Path(script_path).write_text(
         (template
          .replace('{{git_hash}}', get_commit_hash())
