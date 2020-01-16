@@ -123,7 +123,7 @@ def build_and_push():
         encoding='utf8')
 
     # build kernel meta data.
-    meta = build_kernel_meta(commit_hash, script_path)
+    meta = build_kernel_meta(commit_hash, filename)
     save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
 
     # push the built script to Kaggle.
