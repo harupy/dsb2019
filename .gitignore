@@ -145,3 +145,4 @@ input/
 *.csv
 
 script.py
+scripts/

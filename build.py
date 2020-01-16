@@ -48,7 +48,7 @@ def create_kernel_meta(kernel_id, save_dir):
     Create kernel metadata with given kernel id
     """
     meta = read_json('kernel-metadata-base.json')
-    meta.udpate({
+    meta.update({
         'id': meta['id'].format(kernel_id),
         'title': meta['title'].format(kernel_id),
     })
