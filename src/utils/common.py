@@ -164,15 +164,15 @@ def print_divider(text):
     print('\n---------- {} ----------\n'.format(text))
 
 
-def timestamp():
+def get_timestamp():
     """
     Make a timestamp from the current UTC.
 
     >>> import re
     >>> ts = timestamp()
-    >>> m = re.match(r'[\d]{8}-[\d]{6}', ts)  # noqa
+    >>> m = re.match(r'[\d]{14}', ts)  # noqa
     >>> bool(m)
     True
 
     """
-    return datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    return datetime.utcnow().strftime('%Y%m%d_%H%M%S')

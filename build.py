@@ -7,7 +7,7 @@ import gzip
 from pathlib import Path
 import git
 
-from utils.io import read_config
+from utils.io import read_config, read_json, save_dict
 
 
 def parse_args():
@@ -34,13 +34,25 @@ def search_by_ext(top, ext):
     return ret
 
 
-def get_git_hash():
+def get_commit_hash():
     return git.Repo().head.object.hexsha
 
 
 def is_changed():
     changes = [item.a_path for item in git.Repo().index.diff(None)]
     return len(changes) != 0
+
+
+def create_kernel_meta(kernel_id, save_dir):
+    """
+    Create kernel metadata with given kernel id
+    """
+    meta = read_json('kernel-metadata-base.json')
+    meta.udpate({
+        'id': meta['id'].format(kernel_id),
+        'title': meta['title'].format(kernel_id),
+    })
+    save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
 
 
 def build_script():
@@ -53,14 +65,17 @@ def build_script():
     to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), ['src', 'configs'], [])
     scripts = {str(path): encode_file(Path(path)) for path in to_encode}
     template = Path('script_template.py').read_text('utf8')
-    Path('script.py').write_text(
+    commit_hash = get_commit_hash()
+    save_dir = 'scripts'
+    Path(f'{save_dir}/{commit_hash}/{commit_hash}.py').write_text(
         (template
-         .replace('{{git_hash}}', get_git_hash())
+         .replace('{{git_hash}}', get_commit_hash())
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
          .replace('{{config}}', json.dumps(config, indent=2))
          .replace('{{config_path}}', args.config)
          ),
         encoding='utf8')
+    create_kernel_meta(commit_hash, save_dir)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,13 @@
+{
+  "id": "harupy/{}",
+  "title": "{}",
+  "code_file": "INSERT_CODE_FILE_PATH_HERE",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_internet": "false",
+  "dataset_sources": [],
+  "competition_sources": ["data-science-bowl-2019"],
+  "kernel_sources": []
+}
