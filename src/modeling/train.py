@@ -51,7 +51,8 @@ def train_cv(config, X, y, inst_ids, cv):
 
     for seed_idx, seed in enumerate(config.seeds):
         config.params.update({'random_state': seed})
-        X, y, inst_ids = shuffle(X, y, inst_ids, random_state=seed)
+        # X, y, inst_ids = shuffle(X, y, inst_ids, random_state=seed)
+
         for fold_idx, (idx_trn, idx_val) in enumerate(cv.split(X, y, inst_ids)):
             print_divider(f'Seed: {seed_idx} / Fold: {fold_idx}')
             X_trn, X_val = X.iloc[idx_trn], X.iloc[idx_val]
@@ -65,12 +66,12 @@ def train_cv(config, X, y, inst_ids, cv):
             assert inst_ids_trn.index.equals(X_trn.index)
             assert inst_ids_val.index.equals(X_val.index)
 
-            # #  some users in the train set have multiple assessments.
-            # # lines below sample one assessment from each user.
-            # mask_trn = random_truncation(inst_ids_trn, seed)
-            # assert inst_ids_trn[mask_trn].is_unique
-            # X_trn = X_trn.loc[mask_trn]
-            # y_trn = y_trn.loc[mask_trn]
+            #  some users in the train set have multiple assessments.
+            # lines below sample one assessment from each user.
+            mask_trn = random_truncation(inst_ids_trn, seed)
+            assert inst_ids_trn[mask_trn].is_unique
+            X_trn = X_trn.loc[mask_trn]
+            y_trn = y_trn.loc[mask_trn]
 
             # # mask_val = random_sample(inst_ids_val, seed)
             # X_val = X_val.loc[mask_val.index]
