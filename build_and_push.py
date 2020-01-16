@@ -45,7 +45,7 @@ def is_changed():
     return len(changes) != 0
 
 
-def build_kernel_meta(kernel_id, code_file, save_dir):
+def build_kernel_meta(kernel_id, code_file):
     """
     Create kernel metadata with given kernel id
     """
@@ -98,9 +98,9 @@ def build_and_push():
         os.mkdir(save_dir)
 
     # build a runner script.
-    template_path = 'script_template.py'
-    template = Path(template_path).read_text('utf8')
-    Path(f'{save_dir}/{commit_hash}.py').write_text(
+    template = Path(f'{parent_dir}/script_template.py').read_text('utf8')
+    script_path = f'{save_dir}/{commit_hash}.py'
+    Path(script_path).write_text(
         (template
          .replace('{{git_hash}}', get_commit_hash())
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
@@ -110,7 +110,7 @@ def build_and_push():
         encoding='utf8')
 
     # build kernel meta data.
-    meta = build_kernel_meta(commit_hash, save_dir)
+    meta = build_kernel_meta(commit_hash, script_path)
     save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
 
     # push the built script to Kaggle.
