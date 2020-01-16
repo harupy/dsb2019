@@ -74,23 +74,31 @@ def run(command):
         print('----- stderr -----\n', stderr)
 
 
-def build_script():
+def build_and_push():
     if is_changed():
         print('Detect changes. Please commit them before building the script.')
         exit()
 
     args = parse_args()
     config = read_config(args.config)
-    to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), ['src', 'configs'], [])
+
+    # encode scripts under specified directories.
+    dirs = ['src', 'configs']
+    to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), dirs, [])
     scripts = {str(path): encode_file(Path(path)) for path in to_encode}
-    template = Path('script_template.py').read_text('utf8')
+
+    # make a directory using and the current timestamp and commit hash.
+    parent_dir = 'scripts'
     timestamp = get_timestamp()
     commit_hash = get_commit_hash()
-    save_dir = f'scripts/{timestamp}_{commit_hash}'
+    save_dir = f'{parent_dir}/{timestamp}_{commit_hash}'
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
+    # build a runner script.
+    template_path = 'script_template.py'
+    template = Path(template_path).read_text('utf8')
     Path(f'{save_dir}/{commit_hash}.py').write_text(
         (template
          .replace('{{git_hash}}', get_commit_hash())
@@ -100,8 +108,10 @@ def build_script():
          ),
         encoding='utf8')
     create_kernel_meta(commit_hash, save_dir)
+
+    # push the built script to Kaggle.
     run(f'kaggle kernels push -p {save_dir}')
 
 
 if __name__ == '__main__':
-    build_script()
+    build_and_push()

@@ -12,7 +12,7 @@ SCRIPTS = {{scripts}}  # noqa
 CONFIG = {{config}}  # noqa
 
 # git hash.
-GIT_HASH = "{{git_hash}}"
+COMMIT_HASH = "{{commit_hash}}"
 
 
 def skip_commit_run():
