@@ -22,11 +22,17 @@ def parse_args():
 
 
 def encode_file(path):
+    """
+    Return encoded source of given file.
+    """
     compressed = gzip.compress(path.read_bytes(), compresslevel=9)
     return base64.b64encode(compressed).decode('utf-8')
 
 
 def search_by_ext(top, ext):
+    """
+    Search files by extension.
+    """
     ret = []
     for root, dirs, files in os.walk(top):
         for fname in files:
@@ -37,10 +43,16 @@ def search_by_ext(top, ext):
 
 
 def get_commit_hash():
+    """
+    Get the current commit hash.
+    """
     return git.Repo().head.object.hexsha
 
 
 def is_changed():
+    """
+    Return True if Git detects changes.
+    """
     changes = [item.a_path for item in git.Repo().index.diff(None)]
     return len(changes) != 0
 
