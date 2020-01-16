@@ -46,7 +46,7 @@ config = {
     # 'assessment_stats_with_invalid_sessions'
     # 'assessment_attempts_stats_cum',
     # 'assessment_attempts_before',
-    # 'misses',
+    'misses',
     # 'consecutive_assessments',
     # 'unfinished_assessments',
   ]
