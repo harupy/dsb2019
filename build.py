@@ -7,6 +7,7 @@ import gzip
 from pathlib import Path
 import git
 
+from utils.common import get_timestamp
 from utils.io import read_config, read_json, save_dict
 
 
@@ -65,8 +66,9 @@ def build_script():
     to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), ['src', 'configs'], [])
     scripts = {str(path): encode_file(Path(path)) for path in to_encode}
     template = Path('script_template.py').read_text('utf8')
+    timestamp = get_timestamp()
     commit_hash = get_commit_hash()
-    save_dir = f'scripts/{commit_hash}'
+    save_dir = f'scripts/{timestamp}_{commit_hash}'
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
