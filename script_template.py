@@ -6,10 +6,10 @@ from pathlib import Path
 import pandas as pd
 
 # encoded source code.
-SCRIPTS = {{scripts}}
+SCRIPTS = {{scripts}}  # noqa
 
 # training configuration.
-CONFIG = {{config}}
+CONFIG = {{config}}  # noqa
 
 # git hash.
 GIT_HASH = "{{git_hash}}"
