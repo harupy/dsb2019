@@ -100,6 +100,7 @@ def build_script():
          ),
         encoding='utf8')
     create_kernel_meta(commit_hash, save_dir)
+    run(f'kaggle kernels push -p {save_dir}')
 
 
 if __name__ == '__main__':
