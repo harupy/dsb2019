@@ -26,6 +26,7 @@ from utils.kernel import on_kaggle_kernel
 from utils.modeling import (get_cv,
                             average_feature_importance,
                             predict_average)
+from utils.config_dict import ConfigDict
 
 from features.funcs import find_highly_correlated_features, adjust_distribution
 
@@ -46,10 +47,10 @@ def train_cv(config, X, y, inst_ids, cv):
     oof_pred = np.zeros(len(X))
     models = []
     eval_results = []
-    num_seeds = len(config['seeds'])
+    num_seeds = len(config.seeds)
 
-    for seed_idx, seed in enumerate(config['seeds']):
-        config['params'].update({'random_state': seed})
+    for seed_idx, seed in enumerate(config.seeds):
+        config.params.update({'random_state': seed})
         X, y, inst_ids = shuffle(X, y, inst_ids, random_state=seed)
         for fold_idx, (idx_trn, idx_val) in enumerate(cv.split(X, y, inst_ids)):
             print_divider(f'Seed: {seed_idx} / Fold: {fold_idx}')
@@ -64,7 +65,7 @@ def train_cv(config, X, y, inst_ids, cv):
             assert inst_ids_trn.index.equals(X_trn.index)
             assert inst_ids_val.index.equals(X_val.index)
 
-            # # some users in the train set have multiple assessments.
+            # #  some users in the train set have multiple assessments.
             # # lines below sample one assessment from each user.
             # mask_trn = random_truncation(inst_ids_trn, seed)
             # assert inst_ids_trn[mask_trn].is_unique
@@ -79,11 +80,11 @@ def train_cv(config, X, y, inst_ids, cv):
             val_set = lgb.Dataset(X_val, y_val)
 
             eval_result = {}
-            model = lgb.train(config['params'], trn_set,
+            model = lgb.train(config.params, trn_set,
                               valid_sets=[trn_set, val_set],
                               valid_names=['train', 'valid'],
                               callbacks=[lgb.record_evaluation(eval_result)],
-                              **config['fit'])
+                              **config.fit)
 
             oof_pred[y_val.index.values] += model.predict(X_val) / num_seeds
             models.append(model)
@@ -172,10 +173,11 @@ def main():
     test = sbm.copy()
     test = test[['installation_id']]
 
-    config = read_config(args.config)
+    config_dict = read_config(args.config)
+    config = ConfigDict(config_dict)
 
     # merge features
-    for feature_name in flatten_features(config['features']):
+    for feature_name in flatten_features(config.features):
         train_ft, test_ft = read_features(feature_name)
         meta = find_features_meta(feature_name)
 

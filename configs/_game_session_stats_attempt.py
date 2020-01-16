@@ -22,7 +22,7 @@ config = {
   },
 
   'cv': {
-    'class': 'GroupKFold',
+    'type': 'GroupKFold',
     'params': {
       'n_splits': 5
     },

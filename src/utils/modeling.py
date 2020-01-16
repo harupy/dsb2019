@@ -13,7 +13,7 @@ def get_cv(config):
         StratifiedKFold.__name__: StratifiedKFold,
         GroupKFold.__name__: GroupKFold,
     }
-    return classes[config['cv']['class']](**config['cv']['params'])
+    return classes[config.cv.type](**config.cv.params)
 
 
 def average_feature_importance(models, importance_type, normalize=True):
