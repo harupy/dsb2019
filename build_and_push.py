@@ -45,7 +45,7 @@ def is_changed():
     return len(changes) != 0
 
 
-def create_kernel_meta(kernel_id, save_dir):
+def build_kernel_meta(kernel_id, code_file, save_dir):
     """
     Create kernel metadata with given kernel id
     """
@@ -53,8 +53,9 @@ def create_kernel_meta(kernel_id, save_dir):
     meta.update({
         'id': meta['id'].format(kernel_id),
         'title': meta['title'].format(kernel_id),
+        'code_file': meta['code_file'].format(code_file),
     })
-    save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
+    return meta
 
 
 def run(command):
@@ -107,7 +108,10 @@ def build_and_push():
          .replace('{{config_path}}', args.config)
          ),
         encoding='utf8')
-    create_kernel_meta(commit_hash, save_dir)
+
+    # build kernel meta data.
+    meta = build_kernel_meta(commit_hash, save_dir)
+    save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
 
     # push the built script to Kaggle.
     run(f'kaggle kernels push -p {save_dir}')
