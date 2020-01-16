@@ -66,8 +66,12 @@ def build_script():
     scripts = {str(path): encode_file(Path(path)) for path in to_encode}
     template = Path('script_template.py').read_text('utf8')
     commit_hash = get_commit_hash()
-    save_dir = 'scripts'
-    Path(f'{save_dir}/{commit_hash}/{commit_hash}.py').write_text(
+    save_dir = f'scripts/{commit_hash}'
+
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
+
+    Path(f'{save_dir}/{commit_hash}.py').write_text(
         (template
          .replace('{{git_hash}}', get_commit_hash())
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
