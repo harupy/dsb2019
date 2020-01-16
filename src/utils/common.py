@@ -3,6 +3,7 @@ Functions for common operations.
 """
 
 import os
+from datetime import datetime
 
 
 def prefix_list(lst, prefix, sep='_'):
@@ -161,3 +162,17 @@ def remove_dir_ext(fpath):
 
 def print_divider(text):
     print('\n---------- {} ----------\n'.format(text))
+
+
+def timestamp():
+    """
+    Make a timestamp from the current UTC.
+
+    >>> import re
+    >>> ts = timestamp()
+    >>> m = re.match(r'[\d]{8}-[\d]{6}', ts)  # noqa
+    >>> bool(m)
+    True
+
+    """
+    return datetime.utcnow().strftime("%Y%m%d-%H%M%S")
