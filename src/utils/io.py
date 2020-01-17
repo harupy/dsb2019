@@ -11,8 +11,8 @@ import pandas as pd
 # NOTE: `../input` is a read-only directory in Kaggle.
 PARENT_DIR = '../input' if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ else 'data'
 RAW_DIR = f'{PARENT_DIR}/data-science-bowl-2019'
-CLEAN_DIR = f'{PARENT_DIR}/clean'
-FTR_DIR = f'{PARENT_DIR}/features'
+CLEAN_DIR = f'data/clean'
+FTR_DIR = f'data/features'
 
 # make directories for clean and features data.
 for d in [CLEAN_DIR, FTR_DIR]:
