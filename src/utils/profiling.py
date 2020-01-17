@@ -1,5 +1,5 @@
 """
-A script to make a profile notebook from given data.
+A script to make a profile notebook.
 """
 
 import os

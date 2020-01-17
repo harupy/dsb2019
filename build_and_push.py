@@ -80,11 +80,13 @@ def run(command):
     stderr = stderr.decode('utf8')
 
     if stdout:
-        print('----- stdout -----\n', stdout)
+        print('---------- stdout ----------')
+        print(stdout)
 
     # Note: warnings will be included in stderr.
     if stderr:
-        print('----- stderr -----\n', stderr)
+        print('---------- stderr ----------')
+        print(stderr)
 
 
 def build_and_push():

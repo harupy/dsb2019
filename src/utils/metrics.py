@@ -53,7 +53,7 @@ def digitize(x, boundaries):
     return np.digitize(x, bins) - 1
 
 
-class OptimizedRounder(object):
+class OptimizedRounder:
     """
     Class to optimize round boundaries to maximize QWK.
     """

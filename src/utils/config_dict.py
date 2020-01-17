@@ -1,8 +1,11 @@
 import json
 
 
+# copy from: https://github.com/deepmind/deepmind-research/blob/master/alphafold_casp13/config_dict.py # noqa
 class ConfigDict(dict):
-    """Configuration dictionary with convenient dot element access."""
+    """
+    Configuration dictionary with convenient dot element access.
+    """
 
     def __init__(self, *args, **kwargs):
         super(ConfigDict, self).__init__(*args, **kwargs)

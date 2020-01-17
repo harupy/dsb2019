@@ -1,5 +1,5 @@
 """
-Functions for numpy array operations.
+Utilities for numpy array operations.
 """
 
 import numpy as np

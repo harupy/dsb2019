@@ -1,5 +1,5 @@
 """
-Functions for sampling data.
+Utilities for sampling data.
 """
 
 from zlib import crc32

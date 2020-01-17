@@ -1,5 +1,5 @@
 """
-Functions for plotting.
+Utilities for plotting.
 """
 
 import numpy as np

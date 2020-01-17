@@ -1,5 +1,5 @@
 """
-Functions for pandas dataframe.
+Utilities for pandas dataframe.
 """
 
 from functools import reduce

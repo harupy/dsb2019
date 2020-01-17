@@ -1,5 +1,5 @@
 """
-Functions for common operations.
+Utilities for common operations.
 """
 
 import os

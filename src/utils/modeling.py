@@ -1,3 +1,7 @@
+"""
+Utilities for modeling.
+"""
+
 import numpy as np
 from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 
@@ -6,7 +10,7 @@ from utils.array import div_by_sum
 
 def get_cv(config):
     """
-    Return a cross-validation splitter with given configuration.
+    Create a cross-validation splitter with given configuration.
     """
     classes = {
         KFold.__name__: KFold,
@@ -30,6 +34,6 @@ def average_feature_importance(models, importance_type, normalize=True):
 
 def predict_average(models, X):
     """
-    Compute average predict score using given models.
+    Predict average score score using given models.
     """
     return np.mean([model.predict(X) for model in models], axis=0)

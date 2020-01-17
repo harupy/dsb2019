@@ -1,5 +1,5 @@
 """
-Utility functions for encoding.
+Utilities functions for encoding.
 """
 
 from functools import reduce
