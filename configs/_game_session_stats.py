@@ -48,6 +48,6 @@ config = {
     # 'assessment_attempts_before',
     'misses',
     # 'consecutive_assessments',
-    # 'unfinished_assessments',
+    'unfinished_assessments',
   ]
 }
