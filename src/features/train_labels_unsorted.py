@@ -1,3 +1,8 @@
+"""
+Construct unsorted train labels from the train data.
+The provided train labels are sorted by `game_session`.
+"""
+
 import numpy as np
 
 from utils.io import read_from_raw, read_from_clean, save_to_clean
