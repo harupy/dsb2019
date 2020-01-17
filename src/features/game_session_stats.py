@@ -2,6 +2,7 @@
 Cleaner version of this kernel: https://www.kaggle.com/braquino/convert-to-regression.
 """
 
+import re
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -149,6 +150,8 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features.update(title_count)
             features.update(title_event_code_count)
             features.update({'session_count': session_count})
+            features.update({'hour': session['timestamp'].dt.hour.iloc[-1]})
+            features.update({'dayofweek': session['timestamp'].dt.dayofweek.iloc[-1]})
 
             nonzero_features = [('nonzero_event_code', event_code_count),
                                 ('nonzero_event_id', event_id_count),
