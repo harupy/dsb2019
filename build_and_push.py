@@ -1,3 +1,8 @@
+"""
+Build a runner script and push it to Kaggle as a kernel.
+Note that Kaggle automatically executes the pushed script.
+"""
+
 import os
 import subprocess
 import argparse
@@ -21,7 +26,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def encode_file(path):
+def encode_src(path):
     """
     Return encoded source of given file.
     """
@@ -89,7 +94,14 @@ def run(command):
         print(stderr)
 
 
-def build_and_push():
+def push_kernel(directory):
+    """
+    Push a kernel (script and metadat set) to Kaggle.
+    """
+    run(f'kaggle kernels push -p {directory}')
+
+
+def main():
     if is_changed():
         print('Detect changes. Please commit them before building the script.')
         exit()
@@ -100,7 +112,7 @@ def build_and_push():
     # encode scripts under specified directories.
     dirs = ['src', 'configs']
     to_encode = reduce(lambda l, d: l + search_by_ext(d, ['.py']), dirs, [])
-    scripts = {str(path): encode_file(Path(path)) for path in to_encode}
+    scripts = {str(path): encode_src(Path(path)) for path in to_encode}
 
     # make a directory using and the current timestamp and commit hash.
     parent_dir = 'scripts'
@@ -127,10 +139,8 @@ def build_and_push():
     # build kernel meta data.
     meta = build_kernel_meta(commit_hash, filename)
     save_dict(meta, os.path.join(save_dir, 'kernel-metadata.json'))
-
-    # push the built script to Kaggle.
-    run(f'kaggle kernels push -p {save_dir}')
+    push_kernel(save_dir)
 
 
 if __name__ == '__main__':
-    build_and_push()
+    main()
