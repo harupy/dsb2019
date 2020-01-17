@@ -238,11 +238,10 @@ def calc_attempt_stats(df, keep_title=False):
     return stats
 
 
-def cum_by_user(df, funcs, is_test=False):
+def cum_by_user(df, funcs, is_test=False, drop=True):
     """
     Apply cumulative operation by user.
     """
-
     def take_cum(gdf):
         """
         A function to apply to each group dataframe.
@@ -266,7 +265,10 @@ def cum_by_user(df, funcs, is_test=False):
             # for test, it's not necessary to shift rows by one.
             dfs.append(cum if is_test else cum.shift(1))
 
-        return concat_dfs([gdf.drop(drop_cols, axis=1)] + dfs, axis=1)
+        # When multiple cumulative operations are performed on a single column.
+        drop_cols = list(set(drop_cols))
+
+        return concat_dfs([gdf.drop(drop_cols if drop else [], axis=1)] + dfs, axis=1)
 
     return df.groupby('installation_id', sort=False).apply(take_cum)
 

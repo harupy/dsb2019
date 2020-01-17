@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils.common import remove_dir_ext
-from utils.io import read_from_clean, save_features
+from utils.io import read_from_clean, save_features, save_features_meta
 from features.funcs import cum_by_user
 
 
@@ -41,8 +41,9 @@ def main():
         'cummean': ['misses'],
     }
 
-    train = cum_by_user(train, funcs)
-    test = cum_by_user(test, funcs)
+    # set `drop` False to keep the column `misses` for confirmation.
+    train = cum_by_user(train, funcs, drop=False)
+    test = cum_by_user(test, funcs, drop=False)
 
     train = train.fillna(0)
     test = test.fillna(0)
@@ -50,6 +51,7 @@ def main():
     name = remove_dir_ext(__file__)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
+    save_features_meta({'drop_cols': ['misses']}, name)
 
 
 if __name__ == '__main__':

@@ -155,6 +155,13 @@ def save_features(df, name, train_or_test, fmt='ftr'):
 def save_features_meta(data, name):
     """
     Save features meta data (dict).
+
+    Notes
+    -----
+    Metada contains the following values:
+    - use_cols: columns to use when building training data.
+    - drop_cols: columns to drop when building training data.
+
     """
     fpath = os.path.join(FTR_DIR, name, 'meta.json')
     save_dict(data, fpath)
