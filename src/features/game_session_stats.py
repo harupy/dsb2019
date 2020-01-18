@@ -106,6 +106,36 @@ def get_daytime(hour):
         return 4
 
 
+def get_clip_time(clip_title):
+    clip_time = {
+        "Welcome to Lost Lagoon!": 19,
+        "Tree Top City - Level 1": 17,
+        "Ordering Spheres": 61,
+        "Costume Box": 61,
+        "12 Monkeys": 109,
+        "Tree Top City - Level 2": 25,
+        "Pirate's Tale": 80,
+        "Treasure Map": 156,
+        "Tree Top City - Level 3": 26,
+        "Rulers": 126,
+        "Magma Peak - Level 1": 20,
+        "Slop Problem": 60,
+        "Magma Peak - Level 2": 22,
+        "Crystal Caves - Level 1": 18,
+        "Balancing Act": 72,
+        "Lifting Heavy Things": 118,
+        "Crystal Caves - Level 2": 24,
+        "Honey Cake": 142,
+        "Crystal Caves - Level 3": 19,
+        "Heavy, Heavier, Heaviest": 61
+    }
+    return clip_time[clip_title]
+
+
+def get_session_duration(session):
+    return (session['timestamp'].iloc[-1] - session['timestamp'].iloc[0]).seconds
+
+
 def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False):
     """
     Process game sessions of a user.
@@ -119,6 +149,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
     accumulated_actions = 0
     assessment_count = 0
     durations = []
+    clip_durations = []
 
     user_activities_count = make_counter(encoders['type'].keys())
     accuracy_groups = {f'acg_{acg}': 0 for acg in [0, 1, 2, 3]}
@@ -135,6 +166,9 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
 
         session_type = session['type'].iloc[0]
         title = session['title'].iloc[0]
+
+        if session_type == 'Clip':
+            clip_durations.append(get_clip_time(title))
 
         # note that this condition contains assessment sessions that don't have attempts.
         if (session_type == 'Assessment') & (is_test_set or len(session) > 1):
@@ -175,10 +209,16 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             accumulated_incorrect_attempts += incorrect_attempts
             accumulated_total_attempts += total_attempts
 
+            # clip duration
+            features['clip_duration_mean'] = np.mean(clip_durations) if clip_durations else 0
+            features['clip_duration_std'] = np.std(clip_durations) if clip_durations else 0
+            features['clip_duration_var'] = np.std(clip_durations) if clip_durations else 0
+
+            # session duration
             features['duration_mean'] = np.mean(durations) if durations else 0
             features['duration_std'] = np.std(durations) if durations else 0
             features['duration_var'] = np.var(durations) if durations else 0
-            durations.append((session['timestamp'].iloc[-1] - session['timestamp'].iloc[0]).seconds)
+            durations.append(get_session_duration(session))
 
             features['accumulated_accuracy'] = safe_div(accumulated_accuracy, assessment_count)
             accuracy = safe_div(correct_attempts, total_attempts)
