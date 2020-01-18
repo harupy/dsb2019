@@ -9,7 +9,7 @@ import importlib
 import pandas as pd
 
 # NOTE: `../input` is a read-only directory in Kaggle.
-PARENT_DIR = '../input' if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ else 'data'
+PARENT_DIR = 'data' if os.environ['HOME'] == '/Users/harutaka' else '../input'
 RAW_DIR = f'{PARENT_DIR}/data-science-bowl-2019'
 CLEAN_DIR = f'data/clean'
 FTR_DIR = f'data/features'

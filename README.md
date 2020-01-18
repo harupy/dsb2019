@@ -72,4 +72,7 @@ https://www.kaggle.com/bhavikapanara/2019-data-science-bowl-some-interesting-fea
 - Be modular
 - doctest for small functions
 - feather
--
+
+## Why Kaggle doesn't give us the information of submission errors.
+
+> If Kaggle does not reduce number of submissions for failure, we can probe a lot of submissions with 1 bit of information each. For instance, deliberately add a bug to code if the first row in private test is Bird Measurer or not. So, they are smart enough and they have a reason to do so.

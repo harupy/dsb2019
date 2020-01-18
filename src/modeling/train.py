@@ -22,7 +22,7 @@ from utils.plotting import (plot_importance,
                             plot_confusion_matrix,
                             plot_eval_results)
 from utils.metrics import qwk, digitize, OptimizedRounder
-from utils.kernel import on_kaggle_kernel
+from utils.kernel import on_kaggle
 from utils.modeling import (get_cv,
                             average_feature_importance,
                             predict_average)
@@ -281,7 +281,7 @@ def main():
     assert os.path.exists('submission.csv')
 
     # on kaggle kernel, ignore mlflow logging.
-    if on_kaggle_kernel():
+    if on_kaggle():
         return
 
     import mlflow
