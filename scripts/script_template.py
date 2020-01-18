@@ -75,7 +75,8 @@ def decode_scripts(scripts):
 
 
 def main():
-    decode_scripts(SCRIPTS)
+    if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ:
+        decode_scripts(SCRIPTS)
 
     # print out the source code of train.py
     run('cat src/modeling/train.py')
