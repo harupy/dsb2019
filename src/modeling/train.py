@@ -200,8 +200,8 @@ def main():
         del train_ft, test_ft
         gc.collect()
 
-    train = train.reset_index(drop=False)
-    test = test.reset_index(drop=False)
+    train = train.reset_index(drop=True)
+    test = test.reset_index(drop=True)
 
     # remove constant columns.
     constant_columns = find_constant_columns(train)
@@ -267,9 +267,13 @@ def main():
     # print('----- Percentile Rounder -----')
     # print('boundaries:', bounds)
 
+    # convert to integers.
+    pred = pred.astype(np.int8)
+
     # assert pred does not contain invalid values
     assert (~np.isnan(pred)).all()
     assert np.isin(pred, [0, 1, 2, 3]).all()
+    assert len(pred) == len(sbm)
 
     # make submission file
     sbm['accuracy_group'] = pred

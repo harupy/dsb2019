@@ -107,6 +107,9 @@ def get_daytime(hour):
 
 
 def get_clip_time(clip_title):
+    """
+    Get the duration of a clip session.
+    """
     clip_time = {
         "Welcome to Lost Lagoon!": 19,
         "Tree Top City - Level 1": 17,
