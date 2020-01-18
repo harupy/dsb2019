@@ -129,7 +129,7 @@ def main():
     script_path = f'{save_dir}/{filename}'
     Path(script_path).write_text(
         (template
-         .replace('{{git_hash}}', get_commit_hash())
+         .replace('{{commit_hash}}', get_commit_hash())
          .replace('{{scripts}}', json.dumps(scripts, indent=4))
          .replace('{{config}}', json.dumps(config, indent=2))
          .replace('{{config_path}}', args.config)
