@@ -68,11 +68,11 @@ def decode_scripts(scripts):
     """
     Decode encoded scripts (file path -> encoded code).
     """
-    for path, encoded in scripts.items():
+    for path, encoded_src in scripts.items():
         print(path)
         path = Path(path)
         path.parent.mkdir(exist_ok=True)
-        path.write_bytes(gzip.decompress(base64.b64decode(encoded)))
+        path.write_bytes(gzip.decompress(base64.b64decode(encoded_src)))
 
 
 def main():
