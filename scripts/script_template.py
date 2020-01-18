@@ -11,7 +11,7 @@ SCRIPTS = {{scripts}}  # noqa
 # training configuration.
 CONFIG = {{config}}  # noqa
 
-# git hash.
+# commit hash.
 COMMIT_HASH = "{{commit_hash}}"
 
 
@@ -47,6 +47,7 @@ def run(command):
     """
     Execute the command (a string) in a subshell.
     """
+    print('Executing:', command)
     with_export = 'export PYTHONPATH="${PYTHONPATH}:$(pwd):$(pwd)/src" && ' + command
     p = subprocess.Popen([with_export], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     stdout, stderr = p.communicate()
@@ -60,7 +61,7 @@ def run(command):
     # note that warnings will be included in stderr.
     if stderr:
         print('\n---------- stderr ----------\n')
-        print('stderr')
+        print(stderr)
 
 
 def decode_scripts(scripts):
