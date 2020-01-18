@@ -145,4 +145,5 @@ input/
 *.csv
 
 script.py
-scripts/
+scripts/*
+!scripts/script_template.py
