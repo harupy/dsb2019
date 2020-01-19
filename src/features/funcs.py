@@ -270,7 +270,7 @@ def cum_by_user(df, funcs, is_test=False, drop=True):
 
 def move_id_front(df):
     """
-    Move installation_id and game_session to front.
+    Move `installation_id` and `game_session` to front.
     """
     cols = df.columns.tolist()
     cols.insert(0, cols.pop(cols.index('game_session')))
