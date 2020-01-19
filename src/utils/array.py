@@ -52,7 +52,7 @@ def shift_array(arr, num, fill_value=np.nan):
 
     References
     ----------
-    - https://stackoverflow.com/a/42642326
+    https://stackoverflow.com/a/42642326
 
     """
     shifted = np.empty_like(arr.astype(np.float64))

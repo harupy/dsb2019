@@ -34,6 +34,13 @@ def average_feature_importance(models, importance_type, normalize=True):
 
 def predict_average(models, X):
     """
-    Predict average score score using given models.
+    Predict average score using given models.
     """
     return np.mean([model.predict(X) for model in models], axis=0)
+
+
+def predict_median(models, X):
+    """
+    Predict median score using given models.
+    """
+    return np.median([model.predict(X) for model in models], axis=0)

@@ -102,7 +102,7 @@ def read_from_raw(fname, reduce_mem=True):
     df = read_data(fpath)
 
     if reduce_mem:
-        reduce_mem_usage(df)
+        return reduce_mem_usage(df)
 
     return df
 

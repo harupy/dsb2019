@@ -10,11 +10,62 @@ import pandas as pd
 def reduce_mem_usage(df, verbose=True):
     """
     Reduce the memory usage of given dataframe by converting each column into the appropriate data type.
+
+    Examples
+    --------
+    >>> from datetime import datetime
+    >>> df = pd.DataFrame({
+    ...     # non-numeric columns (should not be converted.)
+    ...     'object': ['a'],
+    ...     'bool': [True],
+    ...     'datetime': [datetime.now()],
+    ...     'timedelta': [datetime.now() - datetime.now()],
+    ...
+    ...     # numeric columns (should be converted.)
+    ...     'np.int8': [0],
+    ...     'np.int16': [np.iinfo(np.int8).max],
+    ...     'np.int32': [np.iinfo(np.int16).max],
+    ...     'np.int64': [np.iinfo(np.int32).max],
+    ...     'np.float16': [0.0],
+    ...     'np.float32': [np.finfo(np.float16).max],
+    ...     'np.float64': [np.finfo(np.float64).max],
+    ... })
+
+    By default, numeric columns should have `np.int64` or `np.float64` as data types.
+    >>> df.dtypes
+    object              object
+    bool                  bool
+    datetime    datetime64[ns]
+    timedelta  timedelta64[ns]
+    np.int8              int64
+    np.int16             int64
+    np.int32             int64
+    np.int64             int64
+    np.float16         float64
+    np.float32         float64
+    np.float64         float64
+    dtype: object
+
+    # After reduction, numeric columns should have the appropriate data types.
+    >>> reduce_mem_usage(df, verbose=False).dtypes
+    object              object
+    bool                  bool
+    datetime    datetime64[ns]
+    timedelta  timedelta64[ns]
+    np.int8               int8
+    np.int16             int16
+    np.int32             int32
+    np.int64             int64
+    np.float16         float32
+    np.float32         float32
+    np.float64         float64
+    dtype: object
+
     """
     numeric_dtypes = ['int8', 'int16', 'int32', 'int64',
                       'float16', 'float32', 'float64']
-    mem_before = df.memory_usage().sum() / 1024**2
 
+    dtypes = {}
     for col in df.columns:
         dtype = df[col].dtypes
 
@@ -23,26 +74,30 @@ def reduce_mem_usage(df, verbose=True):
             c_max = df[col].max()
             if str(dtype)[:3] == 'int':
                 if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                    df[col] = df[col].astype(np.int8)
+                    dtypes[col] = np.int8
                 elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
-                    df[col] = df[col].astype(np.int16)
+                    dtypes[col] = np.int16
                 elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
-                    df[col] = df[col].astype(np.int32)
+                    dtypes[col] = np.int32
                 elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
-                    df[col] = df[col].astype(np.int64)
+                    dtypes[col] = np.int64
             else:
                 if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
+                    # feather doesn't accept float16: https://github.com/wesm/feather/issues/362
                     # df[col] = df[col].astype(np.float16)
-                    df[col] = df[col].astype(np.float32)
+                    dtypes[col] = np.float32
                 elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
-                    df[col] = df[col].astype(np.float132)
+                    dtypes[col] = np.float32
                 else:
-                    df[col] = df[col].astype(np.float64)
+                    dtypes[col] = np.float64
 
-    mem_after = df.memory_usage().sum() / 1024**2
+    reduced = df.astype(dtypes)
     if verbose:
-        print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'
+        mem_before = df.memory_usage().sum() / 1024**2
+        mem_after = reduced.memory_usage().sum() / 1024**2
+        print('Memory usage reduced to {:5.2f} Mb ({:.1f}% reduction)'
               .format(mem_after, 100 * (mem_before - mem_after) / mem_before))
+    return reduced
 
 
 def apply_funcs(df, funcs):

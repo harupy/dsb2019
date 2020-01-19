@@ -11,9 +11,9 @@ def main():
     mask = train['installation_id'].isin(labels['installation_id'].unique())
     train = train[mask].reset_index(drop=True)  # reset index to save dataframe as feather
 
-    reduce_mem_usage(train)
-    reduce_mem_usage(test)
-    reduce_mem_usage(labels)
+    train = reduce_mem_usage(train)
+    test = reduce_mem_usage(test)
+    labels = reduce_mem_usage(labels)
 
     save_to_clean(train, 'train.ftr')
     save_to_clean(test, 'test.ftr')

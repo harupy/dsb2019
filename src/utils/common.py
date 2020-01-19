@@ -161,6 +161,17 @@ def remove_dir_ext(fpath):
 
 
 def print_divider(text):
+    """
+    Print a divider.
+
+    Examples
+    --------
+    >>> print_divider('test')
+    <BLANKLINE>
+    ---------- test ----------
+    <BLANKLINE>
+
+    """
     print('\n---------- {} ----------\n'.format(text))
 
 
@@ -169,8 +180,8 @@ def get_timestamp():
     Make a timestamp from the current UTC.
 
     >>> import re
-    >>> ts = timestamp()
-    >>> m = re.match(r'[\d]{14}', ts)  # noqa
+    >>> ts = get_timestamp()
+    >>> m = re.match(r'[\d]{8}_[\d]{6}', ts)  # noqa
     >>> bool(m)
     True
 

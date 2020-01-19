@@ -73,6 +73,7 @@ https://www.kaggle.com/bhavikapanara/2019-data-science-bowl-some-interesting-fea
 - doctest for small functions.
 - feather.
 - Profiler
+- Test if testable.
 
 ## Why Kaggle doesn't give us the information of submission errors?
 
