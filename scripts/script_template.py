@@ -82,7 +82,7 @@ def main():
     run('cat src/modeling/train.py')
 
     # uncomment this line only in the early stage of the competition.
-    # skip_commit_run()
+    skip_commit_run()
 
     # find features scripts to run from the training configuration.
     feature_scripts = get_feature_scripts(CONFIG['features'])

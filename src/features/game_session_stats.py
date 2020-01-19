@@ -93,7 +93,6 @@ def get_daytime(hour):
     4 4
 
     """
-
     if 6 <= hour < 12:
         return 0
     elif 12 <= hour < 18:
@@ -212,10 +211,10 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             accumulated_incorrect_attempts += incorrect_attempts
             accumulated_total_attempts += total_attempts
 
-            # clip duration
-            features['clip_duration_mean'] = np.mean(clip_durations) if clip_durations else 0
-            features['clip_duration_std'] = np.std(clip_durations) if clip_durations else 0
-            features['clip_duration_var'] = np.std(clip_durations) if clip_durations else 0
+            # # clip duration
+            # features['clip_duration_mean'] = np.mean(clip_durations) if clip_durations else 0
+            # features['clip_duration_std'] = np.std(clip_durations) if clip_durations else 0
+            # features['clip_duration_var'] = np.std(clip_durations) if clip_durations else 0
 
             # session duration
             features['duration_mean'] = np.mean(durations) if durations else 0
