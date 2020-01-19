@@ -75,12 +75,20 @@ class BaseModel(metaclass=ABCMeta):
 
         for seed_idx, seed in enumerate(config.seeds):
             config.params.update({'random_state': seed})
+            X, y, groups = shuffle(X, y, groups, random_state=seed)
 
             for fold_idx, (idx_trn, idx_val) in enumerate(cv.split(X, y, groups)):
                 print(f'\n---------- Seed: {seed_idx} / Fold: {fold_idx} ----------\n')
                 X_trn, X_val = X.iloc[idx_trn], X.iloc[idx_val]
                 y_trn, y_val = y.iloc[idx_trn], y.iloc[idx_val]
+                groups_trn = groups.iloc[idx_trn]
                 groups_val = groups.iloc[idx_val]
+
+                # truncate train data.
+                mask_trn = random_truncate(groups_trn, seed)
+                assert groups[mask_trn].is_unique
+                X_trn = X_trn.loc[mask_trn]
+                y_trn = y_trn.loc[mask_trn]
 
                 # truncate validation data.
                 mask_val = random_truncate(groups_val, seed)

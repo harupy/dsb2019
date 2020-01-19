@@ -33,7 +33,7 @@ from utils.modeling import (get_cv,
 from utils.config_dict import ConfigDict
 
 from features.funcs import adjust_distribution
-from modeling.models.lightgbm import LgbModel
+from modeling.models import LgbModel, XgbModel
 
 
 def parse_args():
@@ -263,7 +263,7 @@ def main():
     lgb_model = LgbModel()
 
     # perform cross-validation.
-    oof_preds, oof_labels = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config)
+    oof_preds, oof_labels = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
 
     # optimize round boundaries.
     bounds = []
