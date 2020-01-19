@@ -82,3 +82,8 @@ https://www.kaggle.com/bhavikapanara/2019-data-science-bowl-some-interesting-fea
 ## IOError
 
 On Kaggle kernel, The disk utility is limited to 4.9 GB. Saving large amount of data might cause IOError.
+
+## Remove randomness
+
+- Set `seed` and `random_state`.
+- Don't use `set`.
