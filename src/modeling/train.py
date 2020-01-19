@@ -190,6 +190,7 @@ def main():
         train_ft, test_ft = read_features(feature_name)
         meta = find_features_meta(feature_name)
 
+        # Some features don't have meta data.
         if meta:
             train_ft = apply_meta(train_ft, meta)
             test_ft = apply_meta(test_ft, meta)
@@ -230,9 +231,9 @@ def main():
     # train = train.drop(to_remove, axis=1)
     # test = test.drop(to_remove, axis=1)
 
-    config_name = remove_dir_ext(args.config)
-    save_features(train, 'final', 'train')
-    save_features(test, 'final', 'test')
+    # Saving data might cause IOError on Kaggle.
+    # save_features(train, 'final', 'train')
+    # save_features(test, 'final', 'test')
 
     # replace non-alphanumeric characters with '_'
     # to prevent LightGBM from raising an error on invalid column names.
@@ -271,8 +272,9 @@ def main():
     print('boundaries:', bounds)
     print('QWK:', QWK)
 
-    pred_avg = predict_average(models, X_test)
-    pred = opt.predict(pred_avg)
+    # pred_avg = predict_average(models, X_test)
+    pred_med = predict_median(models, X_test)
+    pred = opt.predict(pred_med)
 
     # bounds = percentile_boundaries(y_train, pred_avg)
     # pred = digitize(pred_avg, bounds)
@@ -287,15 +289,18 @@ def main():
     assert np.isin(pred, [0, 1, 2, 3]).all()
     assert len(pred) == len(sbm)
 
-    # make submission file
+    # make a submission file.
     sbm['accuracy_group'] = pred
     sbm.to_csv('submission.csv', index=False)
+
+    # assert the submission file exists.
     assert os.path.exists('submission.csv')
 
     # on kaggle kernel, ignore mlflow logging.
     if on_kaggle():
         return
 
+    # On local, logging the parameters and metrics with MLflow.
     import mlflow
 
     def log_figure(fig, fname):
@@ -309,6 +314,7 @@ def main():
             mlflow.log_artifact(fpath)
 
     # create mlflow experiment using the config name if not exists.
+    config_name = remove_dir_ext(args.config)
     if mlflow.get_experiment_by_name(config_name) is None:
         mlflow.create_experiment(config_name)
     mlflow.set_experiment(config_name)
