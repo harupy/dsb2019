@@ -9,6 +9,14 @@ from utils.common import with_name
 from utils.dataframe import prefix_columns, concat_dfs
 
 
+def remove_useless_users(train, train_labels):
+    """
+    The train set contains users that don't take assessments. These users should be removed.
+    """
+    mask = train['installation_id'].isin(train_labels['installation_id'].unique())
+    return train[mask].reset_index(drop=True)
+
+
 def is_assessment(df):
     """
     Detect assessments.

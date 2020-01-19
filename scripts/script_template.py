@@ -80,11 +80,10 @@ def main():
 
     # print out the source code of train.py
     run('cat src/modeling/train.py')
-    # skip_commit_run()
+    skip_commit_run()
 
     # find features scripts to run from the training configuration.
     feature_scripts = get_feature_scripts(CONFIG['features'])
-    feature_scripts = ['src/preprocess/clean_data.py'] + feature_scripts
 
     # generate features.
     for features_script in feature_scripts:

@@ -141,7 +141,11 @@ def main():
         assert len(train) == len(labels)
 
         # test
-        test_ft = test_ft.drop('game_session', axis=1).groupby('installation_id').last().reset_index()
+        test_ft = (
+            test_ft.drop('game_session', axis=1)
+            .groupby('installation_id').last()
+            .reset_index()
+        )
         test = pd.merge(test, test_ft, how='left', on='installation_id')
         assert len(test) == len(sbm)
 

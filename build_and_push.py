@@ -16,6 +16,9 @@ import git
 from utils.common import get_timestamp
 from utils.io import read_config, read_json, save_dict
 
+# directory to store scripts to submit.
+SCRIPTS_DIR = 'scripts'
+
 
 def parse_args():
     """
@@ -66,7 +69,7 @@ def build_kernel_meta(kernel_id, code_file):
     """
     Create kernel metadata with given kernel id
     """
-    meta = read_json('kernel-metadata-base.json')
+    meta = read_json(f'{SCRIPTS_DIR}/kernel-metadata-base.json')
     meta.update({
         'id': meta['id'].format(kernel_id),
         'title': meta['title'].format(kernel_id),
@@ -115,17 +118,16 @@ def main():
     scripts = {str(path): encode_src(Path(path)) for path in to_encode}
 
     # make a directory using and the current timestamp and commit hash.
-    parent_dir = 'scripts'
     timestamp = get_timestamp()
     commit_hash = get_commit_hash()
-    save_dir = f'{parent_dir}/{timestamp}_{commit_hash}'
+    save_dir = f'{SCRIPTS_DIR}/{timestamp}_{commit_hash}'
     filename = f'{commit_hash}.py'
 
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
     # build a runner script.
-    template = Path(f'{parent_dir}/script_template.py').read_text('utf8')
+    template = Path(f'{SCRIPTS_DIR}/script_template.py').read_text('utf8')
     script_path = f'{save_dir}/{filename}'
     Path(script_path).write_text(
         (template

@@ -1,8 +1,8 @@
 import numpy as np
 
 from utils.common import remove_dir_ext
-from utils.io import read_from_clean, save_features, save_features_meta
-from features.funcs import cum_by_user
+from utils.io import read_from_raw, save_features, save_features_meta
+from features.funcs import remove_useless_users, cum_by_user
 
 
 def extract_misses(df):
@@ -24,8 +24,12 @@ def extract_misses(df):
 
 
 def main():
-    train = read_from_clean('train.ftr')
-    test = read_from_clean('test.ftr')
+    train = read_from_raw('train.csv')
+    test = read_from_raw('test.csv')
+
+    # remove useless users who don't take assessments.
+    train_labels = read_from_raw('train_labels.csv')
+    train = remove_useless_users(train, train_labels)
 
     train = train.assign(misses=extract_misses)
     test = test.assign(misses=extract_misses)

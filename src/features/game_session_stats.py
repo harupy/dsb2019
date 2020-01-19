@@ -2,15 +2,15 @@
 Cleaner version of this kernel: https://www.kaggle.com/braquino/convert-to-regression.
 """
 
-import re
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utils.io import read_from_clean, save_features, save_features_meta
+from utils.io import read_from_raw, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
 from utils.dataframe import assert_columns_equal
-from features.funcs import (classify_accuracy,
+from features.funcs import (remove_useless_users,
+                            classify_accuracy,
                             filter_assessment,
                             filter_assessment_attempt,
                             move_id_front)
@@ -284,8 +284,12 @@ def get_train_and_test(train, test, encoders, assess_titles):
 
 def main():
     # read data
-    train = read_from_clean('train.ftr')
-    test = read_from_clean('test.ftr')
+    train = read_from_raw('train.csv')
+    test = read_from_raw('test.csv')
+
+    # remove useless users who don't take assessments.
+    train_labels = read_from_raw('train_labels.csv')
+    train = remove_useless_users(train, train_labels)
 
     # convert timestamp from string to datetime.
     train['timestamp'] = pd.to_datetime(train['timestamp'])
@@ -307,7 +311,7 @@ def main():
     test = move_id_front(test)
 
     # assert calculated accuracy_group equals to the true values.
-    train_labels = read_from_clean('train_labels.ftr')
+    train_labels = read_from_raw('train_labels.csv')
     cols = ['installation_id', 'game_session', 'accuracy_group']
     merged = pd.merge(train_labels[cols], train[cols],
                       on=cols[:-1], how='left')

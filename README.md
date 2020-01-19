@@ -61,18 +61,23 @@ https://www.kaggle.com/bhavikapanara/2019-data-science-bowl-some-interesting-fea
 
 ## Worked
 
-- Using `title` as `categorical_feature`.
+- Using `title` as `categorical_feature`. (Everyone does this.)
 - Truncation (use one assessment for each `installation_id`).
 - `percentile_boundaries` (increased the public LB score, but this forces predicted labels to have the same distribution as the train set. The private set might have different label distribution.)
 
 ## Techniques
 
-- Data profiler
-- features scripts
-- Be modular
-- doctest for small functions
-- feather
+- Data profiler.
+- features scripts.
+- Be modular.
+- doctest for small functions.
+- feather.
+- Profiler
 
-## Why Kaggle doesn't give us the information of submission errors.
+## Why Kaggle doesn't give us the information of submission errors?
 
 > If Kaggle does not reduce number of submissions for failure, we can probe a lot of submissions with 1 bit of information each. For instance, deliberately add a bug to code if the first row in private test is Bird Measurer or not. So, they are smart enough and they have a reason to do so.
+
+## IOError
+
+On Kaggle kernel, The disk utility is limited to 4.9 GB. Saving large amount of data might cause IOError.

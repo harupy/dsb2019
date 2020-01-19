@@ -8,8 +8,10 @@ import yaml
 import importlib
 import pandas as pd
 
-# NOTE: `../input` is a read-only directory in Kaggle.
-PARENT_DIR = 'data' if os.environ['HOME'] == '/Users/harutaka' else '../input'
+from utils.dataframe import reduce_mem_usage
+
+# NOTE: `/kaggle/input` is a read-only directory in Kaggle.
+PARENT_DIR = '../input' if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ else 'data'
 RAW_DIR = f'{PARENT_DIR}/data-science-bowl-2019'
 CLEAN_DIR = f'data/clean'
 FTR_DIR = f'data/features'
@@ -68,6 +70,13 @@ def read_data(fpath):
 def save_data(df, fpath):
     """
     Save tabular data.
+
+    Paramters
+    ---------
+    df : dataframe
+        DataFrame to save.
+    fpath : str
+        file path.
     """
     print(f'Saving {fpath}')
     if fpath.endswith('.csv'):
@@ -78,12 +87,24 @@ def save_data(df, fpath):
         raise TypeError('Invalid file type: {}'.format(os.path.splitext(fpath)))
 
 
-def read_from_raw(fname):
+def read_from_raw(fname, reduce_mem=True):
     """
     Read data from the raw data directory.
+
+    Paramters
+    ---------
+    fname : str
+        file name.
+    reduce_mem : bool, default True
+        If True, reduce memory usage by converting dtypes.
     """
     fpath = os.path.join(RAW_DIR, fname)
-    return read_data(fpath)
+    df = read_data(fpath)
+
+    if reduce_mem:
+        reduce_mem_usage(df)
+
+    return df
 
 
 def read_from_clean(fname):
