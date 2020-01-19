@@ -182,7 +182,7 @@ def get_timestamp():
     >>> import re
     >>> ts = get_timestamp()
     >>> m = re.match(r'[\d]{8}_[\d]{6}', ts)  # noqa
-    >>> bool(m)
+    >>> m is not None
     True
 
     """

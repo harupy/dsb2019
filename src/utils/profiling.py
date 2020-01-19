@@ -24,6 +24,20 @@ def parse_args():
 def search_by_ext(top, ext):
     """
     Search files by extension under given directory.
+
+    Examples
+    --------
+    >>> import os
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as tmpdir:
+    ...     names = ['test.txt', 'test.py', 'test.sh']
+    ...     files = [os.path.join(tmpdir, f) for f in names]
+    ...     for f in files:
+    ...         open(f, 'w').close()
+    ...     matched = search_by_ext(tmpdir, ['.txt', '.py'])
+    ...     set(matched) == set(files[:-1])
+    True
+
     """
     result = []
     for root, dirs, files in os.walk(top):
