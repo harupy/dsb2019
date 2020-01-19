@@ -109,7 +109,7 @@ def plot_confusion_matrix(cm):
     return g.fig
 
 
-def plot_importance(features, importance, importance_type, max_num_features=None):
+def plot_importance(features, importance, importance_type, importance_std=None, max_num_features=None):
     """
     Plot feature importance.
     """
@@ -130,6 +130,8 @@ def plot_importance(features, importance, importance_type, max_num_features=None
 
     yloc = np.arange(num_features)
     ax.barh(yloc, importance, align='center', height=0.5)
+    if plot_importance:
+        ax.barh(yloc, importance_std[indices], align='center', height=0.5)
     ax.set_yticks(yloc)
     ax.set_yticklabels(features)
     ax.set_xlabel('Importance')
