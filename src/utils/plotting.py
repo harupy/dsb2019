@@ -12,7 +12,7 @@ sns.set()
 
 class JointConfusionMatrix:
     """
-    Ref. https://github.com/mwaskom/seaborn/blob/master/seaborn/axisgrid.py#L1551
+    Based on: https://github.com/mwaskom/seaborn/blob/master/seaborn/axisgrid.py#L1551
     """
 
     def __init__(self, cm, height=6, ratio=5, space=.2,

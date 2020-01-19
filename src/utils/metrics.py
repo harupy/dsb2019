@@ -43,6 +43,8 @@ def qwk(a1, a2):
 
 def digitize(x, boundaries):
     """
+    Examples
+    --------
     >>> x = np.array([0.1, 1.1, 2.1])
     >>> boundaries = [0.2, 1.6]
     >>> digitize(x, boundaries)

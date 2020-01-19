@@ -30,7 +30,7 @@ def skip_commit_run():
 
 def get_feature_scripts(features):
     """
-    Get features scripts files.
+    Get scripts that generate features.
     """
     SCRIPTS_DIR = 'src/features'
     result = []
@@ -80,6 +80,8 @@ def main():
 
     # print out the source code of train.py
     run('cat src/modeling/train.py')
+
+    # uncomment this line only in the early stage of the competition.
     # skip_commit_run()
 
     # find features scripts to run from the training configuration.
