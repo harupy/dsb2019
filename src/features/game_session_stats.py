@@ -211,6 +211,7 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             accumulated_incorrect_attempts += incorrect_attempts
             accumulated_total_attempts += total_attempts
 
+            # This decreased the public score.
             # # clip duration
             # features['clip_duration_mean'] = np.mean(clip_durations) if clip_durations else 0
             # features['clip_duration_std'] = np.std(clip_durations) if clip_durations else 0
