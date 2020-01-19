@@ -193,3 +193,36 @@ def find_constant_columns(df):
     Returns constant columns of given dataframe.
     """
     return df.loc[:, (df == df.iloc[0]).all()].columns.tolist()
+
+
+def find_highly_correlated_columns(df, thresh=0.995, verbose=False):
+    """
+    Find highly correlated columns.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({
+    ...     'a': [1, 2, 3],
+    ...     'b': [1, 2, 3],
+    ...     'c': [-1, -2, -3],
+    ...     'd': [0.5, 0.1, 0.3],
+    ... })
+    >>> find_highly_correlated_columns(df)
+    ['b', 'c']
+    """
+    features = df.select_dtypes('number').columns
+    result = []
+    counter = 0
+    for feat_a in features:
+        for feat_b in features:
+            if (feat_a == feat_b) or (feat_a in result) or (feat_b in result):
+                continue
+            corr = np.corrcoef(df[feat_a], df[feat_b])[0][1]
+            if abs(corr) > thresh:
+                counter += 1
+                result.append(feat_b)
+
+                if verbose:
+                    print('{} Feature_a: {} Feature_b: {} - correlation: {}'
+                          .format(counter, feat_a, feat_b, corr))
+    return result

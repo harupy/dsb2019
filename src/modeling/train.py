@@ -16,7 +16,10 @@ from utils.io import (read_config,
                       read_features,
                       save_features,
                       find_features_meta)
-from utils.dataframe import assert_columns_equal, find_constant_columns, apply_funcs
+from utils.dataframe import (assert_columns_equal,
+                             find_constant_columns,
+                             find_highly_correlated_columns,
+                             apply_funcs)
 from utils.plotting import (plot_importance,
                             plot_label_share,
                             plot_confusion_matrix,
@@ -29,7 +32,7 @@ from utils.modeling import (get_cv,
                             predict_median)
 from utils.config_dict import ConfigDict
 
-from features.funcs import find_highly_correlated_features, adjust_distribution
+from features.funcs import adjust_distribution
 
 
 def parse_args():
@@ -75,7 +78,7 @@ def train_cv(config, X, y, inst_ids, cv):
             # - Truncate only the validation set.
             # - Truncate both the train and validation sets.
             # Ref.: https://www.kaggle.com/poteman/sampling-train-data-and-use-prediction-as-feature  # noqa
-            mask_trn = random_truncation(inst_ids_trn, seed)
+            mask_trn = random_truncate(inst_ids_trn, seed)
             assert inst_ids_trn[mask_trn].is_unique
             X_trn = X_trn.loc[mask_trn]
             y_trn = y_trn.loc[mask_trn]
@@ -132,7 +135,7 @@ def flatten_features(features):
     return result
 
 
-def random_truncation(inst_ids, seed):
+def random_truncate(inst_ids, seed):
     """
     Create a mask that samples one assessment from each installation_id.
     """
@@ -222,14 +225,14 @@ def main():
     test = test.drop(constant_columns, axis=1)
 
     # remove highly correlated features.
-    to_remove = find_highly_correlated_features(train)
-    train = train.drop(to_remove, axis=1)
-    test = test.drop(to_remove, axis=1)
+    to_drop = find_highly_correlated_columns(train, verbose=True)
+    train = train.drop(to_drop, axis=1)
+    test = test.drop(to_drop, axis=1)
 
     # # adjust distribution between train and test.
-    # test, to_remove = adjust_distribution(train, test)
-    # train = train.drop(to_remove, axis=1)
-    # test = test.drop(to_remove, axis=1)
+    # test, to_drop = adjust_distribution(train, test)
+    # train = train.drop(to_drop, axis=1)
+    # test = test.drop(to_drop, axis=1)
 
     # Saving data might cause IOError on Kaggle.
     # save_features(train, 'final', 'train')
@@ -257,11 +260,6 @@ def main():
 
     models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
 
-    # feature importance
-    feature_names = np.array(models[0].feature_name())
-    imp_split = average_feature_importance(models, 'split')
-    imp_gain = average_feature_importance(models, 'gain')
-
     # optimize round boundaries.
     opt = OptimizedRounder()
     opt.fit(y_train, oof_pred)
@@ -276,6 +274,8 @@ def main():
     pred_med = predict_median(models, X_test)
     pred = opt.predict(pred_med)
 
+    # Some top public kernels use this method, but this is dangerous because
+    # the label distribution of the private test set might be different from the train set.
     # bounds = percentile_boundaries(y_train, pred_avg)
     # pred = digitize(pred_avg, bounds)
     # print('----- Percentile Rounder -----')
@@ -318,6 +318,11 @@ def main():
     if mlflow.get_experiment_by_name(config_name) is None:
         mlflow.create_experiment(config_name)
     mlflow.set_experiment(config_name)
+
+    # feature importance
+    feature_names = np.array(models[0].feature_name())
+    imp_split = average_feature_importance(models, 'split')
+    imp_gain = average_feature_importance(models, 'gain')
 
     with mlflow.start_run():
         mlflow.log_artifact(args.config)

@@ -151,23 +151,10 @@ def classify_accuracy(acc):
         return 1
 
 
-def find_highly_correlated_features(df, thresh=0.995):
-    counter = 0
-    features = df.select_dtypes('number').columns
-    result = []
-    for feat_a in features:
-        for feat_b in features:
-            if (feat_a != feat_b) and (feat_a not in result) and (feat_b not in result):
-                corr = np.corrcoef(df[feat_a], df[feat_b])[0][1]
-                if abs(corr) > thresh:
-                    counter += 1
-                    result.append(feat_b)
-                    print('{}: FEAT_A: {} FEAT_B: {} - Correlation: {}'
-                          .format(counter, feat_a, feat_b, corr))
-    return result
-
-
 def hist_mse(train, test, adjust=False, plot=False):
+    """
+    TODO: understand what this function does.
+    """
     n_bins = 10
 
     if adjust:
@@ -218,13 +205,13 @@ def adjust_distribution(train, test):
 
 def calc_attempt_stats(df, keep_title=False):
     """
-    Calculate the following by assessment game session:
+    Calculate the following values by assessment:
     - num_correct
     - num_incorrect
     - accuracy
     - accuracy group
-    """
 
+    """
     aggs = {
         'attempt_result': [
             with_name(lambda s: np.nan if s.isnull().all() else (s == 1).sum(), 'num_correct'),

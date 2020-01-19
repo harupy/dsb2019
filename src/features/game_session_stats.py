@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from utils.io import read_from_raw, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
-from utils.dataframe import assert_columns_equal
+from utils.dataframe import assert_columns_equal, find_highly_correlated_columns
 from features.funcs import (remove_useless_users,
                             classify_accuracy,
                             filter_assessment,
@@ -247,14 +247,14 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
 
         session_count += 1
 
-        def update_counters(counter, col):
+        def update_counter(counter, col):
             for key, value in session[col].value_counts().items():
                 counter[key] += value
 
-        update_counters(event_code_count, 'event_code')
-        update_counters(event_id_count, 'event_id')
-        update_counters(title_count, 'title')
-        update_counters(title_event_code_count, 'title_event_code')
+        update_counter(event_code_count, 'event_code')
+        update_counter(event_id_count, 'event_id')
+        update_counter(title_count, 'title')
+        update_counter(title_event_code_count, 'title_event_code')
 
         accumulated_actions += len(session)
         if last_activity != session_type:
@@ -318,6 +318,10 @@ def main():
     pd.testing.assert_series_equal(merged[cols[-1] + '_x'],
                                    merged[cols[-1] + '_y'],
                                    check_dtype=False, check_names=False)
+
+    to_drop = find_highly_correlated_columns(train)
+    train = train.drop(to_drop, axis=1)
+    test = test.drop(to_drop, axis=1)
 
     name = remove_dir_ext(__file__)
     assert_columns_equal(train, test)

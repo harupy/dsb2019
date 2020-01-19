@@ -16,13 +16,13 @@ from utils.io import (read_config,
                       read_features,
                       save_features,
                       find_features_meta)
-from utils.dataframe import find_constant_columns, apply_funcs
+from utils.dataframe import find_constant_columns, find_highly_correlated_columns, apply_funcs
 from utils.plotting import (plot_importance,
                             plot_label_share,
                             plot_confusion_matrix,
                             plot_eval_results,
                             plot_tree)
-from features.funcs import find_highly_correlated_features, adjust_distribution
+from features.funcs import adjust_distribution
 from utils.modeling import (get_cv,
                             average_feature_importance)
 from utils.config_dict import ConfigDict
