@@ -20,6 +20,10 @@ class LgbModel(BaseModel):
         return model.predict(X)
 
     def feature_importance(self, model, importance_type):
-        features = model.feature_name()
-        importance = model.feature_importance(importance_type=importance_type)
-        return features, importance
+        """
+        Note that feature importance must be aligned to feature names.
+        """
+        return model.feature_importance(importance_type=importance_type)
+
+    def feature_name(self):
+        return self.models[0].feature_name()

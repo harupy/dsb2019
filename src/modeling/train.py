@@ -33,6 +33,7 @@ from utils.modeling import (get_cv,
 from utils.config_dict import ConfigDict
 
 from features.funcs import adjust_distribution
+from modeling.models.lightgbm import LgbModel
 
 
 def parse_args():
@@ -224,10 +225,10 @@ def main():
     train = train.drop(constant_columns, axis=1)
     test = test.drop(constant_columns, axis=1)
 
-    # remove highly correlated features.
-    to_drop = find_highly_correlated_columns(train, verbose=True)
-    train = train.drop(to_drop, axis=1)
-    test = test.drop(to_drop, axis=1)
+    # # remove highly correlated features.
+    # to_drop = find_highly_correlated_columns(train, verbose=True)
+    # train = train.drop(to_drop, axis=1)
+    # test = test.drop(to_drop, axis=1)
 
     # # adjust distribution between train and test.
     # test, to_drop = adjust_distribution(train, test)
@@ -258,21 +259,31 @@ def main():
     # prepare cross-validation splitter.
     cv = get_cv(config)
 
-    models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
+    # models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
+    lgb_model = LgbModel()
+
+    # perform cross-validation.
+    oof_preds, oof_labels = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config)
 
     # optimize round boundaries.
-    opt = OptimizedRounder()
-    opt.fit(y_train, oof_pred)
-    oof_pred_round = opt.predict(oof_pred)
-    bounds = opt.boundaries.tolist()
-    QWK = qwk(y_train, oof_pred_round)
-    print('----- Optimize Rounder -----')
-    print('boundaries:', bounds)
-    print('QWK:', QWK)
+    bounds = []
+    qwks = []
+    for preds, labels in zip(oof_preds, oof_labels):
+        opt = OptimizedRounder()
+        opt.fit(labels, preds)
+        preds_round = opt.predict(preds)
+        bounds.append(opt.boundaries)
+        qwks.append(qwk(labels, preds_round))
+
+    bounds_avg = np.mean(bounds, axis=0)
+    qwk_avg = np.mean(qwks)
+    print('----- Optimization result -----')
+    print('boundaries:', bounds_avg)
+    print('QWK:', qwk_avg)
 
     # pred_avg = predict_average(models, X_test)
-    pred_med = predict_median(models, X_test)
-    pred = opt.predict(pred_med)
+    pred_med = lgb_model.predict_median(X_test)
+    pred = digitize(pred_med, bounds_avg)
 
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
@@ -319,28 +330,26 @@ def main():
         mlflow.create_experiment(config_name)
     mlflow.set_experiment(config_name)
 
-    # feature importance
-    feature_names = np.array(models[0].feature_name())
-    imp_split = average_feature_importance(models, 'split')
-    imp_gain = average_feature_importance(models, 'gain')
-
     with mlflow.start_run():
         mlflow.log_artifact(args.config)
 
-        mlflow.log_params({'boundaries': bounds})
-        mlflow.log_metrics({'qwk': QWK})
+        mlflow.log_params({'boundaries': bounds_avg})
+        mlflow.log_metrics({'qwk': qwk_avg})
 
         # log plots
-        cm = confusion_matrix(y_train, oof_pred_round)
-        log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
-        log_figure(plot_eval_results(eval_results), 'eval_history.png')
+        # cm = confusion_matrix(y_train, oof_pred_round)
+        # log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
+        log_figure(plot_eval_results(lgb_model.eval_results), 'eval_history.png')
 
         # log label share
         log_figure(plot_label_share(y_train), 'train_label_share.png')
         log_figure(plot_label_share(pred), 'pred_label_share.png')
 
-        for imp, imp_type in zip([imp_split, imp_gain], ['split', 'gain']):
-            fig = plot_importance(feature_names, imp, imp_type, 30)
+        # feature importance
+        feature_names = lgb_model.feature_name()
+        for imp_type in ['split', 'gain']:
+            imp, imp_std = lgb_model.feature_importance_average(imp_type, return_std=True)
+            fig = plot_importance(feature_names, imp, imp_type, imp_std, 30)
             log_figure(fig, f'feature_importance_{imp_type}.png')
 
 
