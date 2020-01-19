@@ -252,7 +252,7 @@ def main():
     # assert train and test data have the same columns.
     assert_columns_equal(X_train, X_test)
 
-    # prepare cv generator
+    # prepare cross-validation splitter.
     cv = get_cv(config)
 
     models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
