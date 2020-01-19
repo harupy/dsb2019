@@ -217,10 +217,10 @@ def main():
     train = train.drop(to_remove, axis=1)
     test = test.drop(to_remove, axis=1)
 
-    # adjust distribution between train and test.
-    test, to_remove = adjust_distribution(train, test)
-    train = train.drop(to_remove, axis=1)
-    test = test.drop(to_remove, axis=1)
+    # # adjust distribution between train and test.
+    # test, to_remove = adjust_distribution(train, test)
+    # train = train.drop(to_remove, axis=1)
+    # test = test.drop(to_remove, axis=1)
 
     config_name = remove_dir_ext(args.config)
     save_features(train, 'final', 'train')
