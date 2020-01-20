@@ -25,7 +25,7 @@ from utils.plotting import (plot_importance,
                             plot_confusion_matrix,
                             plot_eval_results)
 from utils.metrics import qwk, digitize, OptimizedRounder
-from utils.kernel import on_kaggle
+from utils.kaggle import on_kaggle
 from utils.modeling import (get_cv,
                             average_feature_importance,
                             predict_average,
@@ -265,11 +265,11 @@ def main():
     # perform cross-validation.
     oof_preds = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
 
-    opt = OptimizedRounder()
-    opt.fit(y_train, oof_preds)
-    preds_round = opt.predict(oof_preds)
-    QWK = qwk(y_train, preds_round)
-    bounds = opt.boundaries.tolist()
+    # opt = OptimizedRounder()
+    # opt.fit(y_train, oof_preds)
+    # preds_round = opt.predict(oof_preds)
+    # QWK = qwk(y_train, preds_round)
+    # bounds = opt.boundaries.tolist()
 
     # optimize round boundaries.
     # bounds = []
@@ -293,24 +293,23 @@ def main():
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
     bounds = percentile_boundaries(y_train, test_pred)
-    QWK = qwk(y_train, digitize(oof_preds, bounds))
-    # pred = digitize(pred_med, bounds)
-    # print('----- Percentile Rounder -----')
+    oof_round = digitize(oof_preds, bounds)
+    QWK = qwk(y_train, oof_round)
     print('boundaries:', bounds)
     print('QWK:', QWK)
 
-    pred = digitize(test_pred, bounds)
+    pred_sbm = digitize(test_pred, bounds)
 
     # convert to integers.
-    pred = pred.astype(np.int8)
+    pred_sbm = pred_sbm.astype(np.int8)
 
     # assert pred does not contain invalid values
-    assert (~np.isnan(pred)).all()
-    assert np.isin(pred, [0, 1, 2, 3]).all()
-    assert len(pred) == len(sbm)
+    assert (~np.isnan(pred_sbm)).all()
+    assert np.isin(pred_sbm, [0, 1, 2, 3]).all()
+    assert len(pred_sbm) == len(sbm)
 
     # make a submission file.
-    sbm['accuracy_group'] = pred
+    sbm['accuracy_group'] = pred_sbm
     sbm.to_csv('submission.csv', index=False)
 
     # assert the submission file exists.
@@ -346,13 +345,13 @@ def main():
         mlflow.log_metrics({'qwk': QWK})
 
         # log plots
-        # cm = confusion_matrix(y_train, oof_pred_round)
-        # log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
+        cm = confusion_matrix(y_train, oof_round)
+        log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
         log_figure(plot_eval_results(lgb_model.eval_results), 'eval_history.png')
 
         # log label share
         log_figure(plot_label_share(y_train), 'train_label_share.png')
-        log_figure(plot_label_share(pred), 'pred_label_share.png')
+        log_figure(plot_label_share(oof_round), 'pred_label_share.png')
 
         # feature importance
         feature_names = lgb_model.feature_name()
