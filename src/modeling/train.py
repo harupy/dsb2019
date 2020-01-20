@@ -288,15 +288,18 @@ def main():
     # print('QWK:', qwk_avg)
 
     # pred_avg = predict_average(models, X_test)
-    pred_med = lgb_model.predict_median(X_test)
-    pred = digitize(pred_med, bounds)
+    test_pred = lgb_model.predict_median(X_test)
 
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
-    # bounds = percentile_boundaries(y_train, pred_avg)
-    # pred = digitize(pred_avg, bounds)
+    bounds = percentile_boundaries(y_train, test_pred)
+    QWK = qwk(y_train, digitize(oof_preds, bounds))
+    # pred = digitize(pred_med, bounds)
     # print('----- Percentile Rounder -----')
-    # print('boundaries:', bounds)
+    print('boundaries:', bounds)
+    print('QWK:', QWK)
+
+    pred = digitize(test_pred, bounds)
 
     # convert to integers.
     pred = pred.astype(np.int8)

@@ -11,10 +11,10 @@ from functools import reduce
 import base64
 import gzip
 from pathlib import Path
-import git
 
 from utils.common import get_timestamp
 from utils.io import read_config, read_json, save_dict
+from utils.git import get_commit_hash, is_changed
 
 # directory to store scripts to submit.
 SCRIPTS_DIR = 'scripts'
@@ -48,21 +48,6 @@ def search_by_ext(top, ext):
                 continue
             ret.append(os.path.join(root, fname))
     return ret
-
-
-def get_commit_hash():
-    """
-    Get the current commit hash.
-    """
-    return git.Repo().head.object.hexsha
-
-
-def is_changed():
-    """
-    Return True if Git detects changes.
-    """
-    changes = [item.a_path for item in git.Repo().index.diff(None)]
-    return len(changes) != 0
 
 
 def build_kernel_meta(kernel_id, code_file):
