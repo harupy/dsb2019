@@ -263,27 +263,33 @@ def main():
     lgb_model = LgbModel()
 
     # perform cross-validation.
-    oof_preds, oof_labels = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+    oof_preds = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+
+    opt = OptimizedRounder()
+    opt.fit(y_train, oof_preds)
+    preds_round = opt.predict(oof_preds)
+    QWK = qwk(y_train, preds_round)
+    bounds = opt.boundaries.tolist()
 
     # optimize round boundaries.
-    bounds = []
-    qwks = []
-    for preds, labels in zip(oof_preds, oof_labels):
-        opt = OptimizedRounder()
-        opt.fit(labels, preds)
-        preds_round = opt.predict(preds)
-        bounds.append(opt.boundaries)
-        qwks.append(qwk(labels, preds_round))
+    # bounds = []
+    # qwks = []
+    # for preds, labels in zip(oof_preds, oof_labels):
+    #     opt = OptimizedRounder()
+    #     opt.fit(labels, preds)
+    #     preds_round = opt.predict(preds)
+    #     bounds.append(opt.boundaries)
+    #     qwks.append(qwk(labels, preds_round))
 
-    bounds_avg = np.mean(bounds, axis=0)
-    qwk_avg = np.mean(qwks)
-    print('----- Optimization result -----')
-    print('boundaries:', bounds_avg)
-    print('QWK:', qwk_avg)
+    # bounds_avg = np.mean(bounds, axis=0)
+    # qwk_avg = np.mean(qwks)
+    # print('----- Optimization result -----')
+    # print('boundaries:', bounds_avg)
+    # print('QWK:', qwk_avg)
 
     # pred_avg = predict_average(models, X_test)
     pred_med = lgb_model.predict_median(X_test)
-    pred = digitize(pred_med, bounds_avg)
+    pred = digitize(pred_med, bounds)
 
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
@@ -333,8 +339,8 @@ def main():
     with mlflow.start_run():
         mlflow.log_artifact(args.config)
 
-        mlflow.log_params({'boundaries': bounds_avg})
-        mlflow.log_metrics({'qwk': qwk_avg})
+        mlflow.log_params({'boundaries': bounds})
+        mlflow.log_metrics({'qwk': QWK})
 
         # log plots
         # cm = confusion_matrix(y_train, oof_pred_round)

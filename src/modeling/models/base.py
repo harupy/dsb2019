@@ -70,12 +70,12 @@ class BaseModel(metaclass=ABCMeta):
         Perform cross-validation.
         """
         num_seeds = len(config.seeds)
-        oof_preds = []
+        oof_preds = np.zeros((len(X), num_seeds))
         oof_labels = []
 
         for seed_idx, seed in enumerate(config.seeds):
             config.params.update({'random_state': seed})
-            X, y, groups = shuffle(X, y, groups, random_state=seed)
+            # X, y, groups = shuffle(X, y, groups, random_state=seed)
 
             for fold_idx, (idx_trn, idx_val) in enumerate(cv.split(X, y, groups)):
                 print(f'\n---------- Seed: {seed_idx} / Fold: {fold_idx} ----------\n')
@@ -90,16 +90,18 @@ class BaseModel(metaclass=ABCMeta):
                 X_trn = X_trn.loc[mask_trn]
                 y_trn = y_trn.loc[mask_trn]
 
-                # truncate validation data.
-                mask_val = random_truncate(groups_val, seed)
-                X_val = X_val.loc[mask_val]
-                y_val = y_val.loc[mask_val]
+                # # truncate validation data.
+                # mask_val = random_truncate(groups_val, seed)
+                # X_val = X_val.loc[mask_val]
+                # y_val = y_val.loc[mask_val]
 
                 model, eval_result = self.fit(X_trn, y_trn, X_val, y_val, config)
-                oof_preds.append(self.predict(model, X_val))
-                oof_labels.append(y_val)
+                oof_preds[idx_val, seed_idx] = self.predict(model, X_val)
+                # # when truncating validation data.
+                # oof_preds.append(self.predict(model, X_val))
+                # oof_labels.append(y_val)
 
                 self.models.append(model)
                 self.eval_results.append(eval_result)
 
-        return oof_preds, oof_labels
+        return np.median(oof_preds, axis=1)
