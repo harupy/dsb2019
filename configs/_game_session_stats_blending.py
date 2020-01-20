@@ -1,4 +1,4 @@
-SEEDS = [0, 1, 2, 3, 4]
+SEEDS = list(range(5))
 
 config = {
   'lightgbm': {
@@ -34,7 +34,7 @@ config = {
       'learning_rate': 0.01,
       'subsample': 0.75,  # sample rows
       'colsample_bytree': 0.9,  # sample columns
-      'max_depth': 15,
+      'max_depth': 10,
       'reg_alpha': 1,
       'reg_lambda': 1,
       'seed': SEEDS[0],
@@ -71,7 +71,7 @@ config = {
     # 'assessment_stats_with_invalid_sessions'
     # 'assessment_attempts_stats_cum',
     # 'assessment_attempts_before',
-    'misses',
+    # 'misses',
     # 'consecutive_assessments',
     # 'unfinished_assessments',
   ]

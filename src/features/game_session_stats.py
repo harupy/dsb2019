@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from utils.io import read_from_raw, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
-from utils.dataframe import assert_columns_equal, find_highly_correlated_columns
+from utils.dataframe import apply_funcs, assert_columns_equal, find_highly_correlated_columns
 from features.funcs import (remove_useless_users,
                             classify_accuracy,
                             filter_assessment,
@@ -135,7 +135,45 @@ def get_clip_time(clip_title):
 
 
 def get_session_duration(session):
+    """
+    Get the duration of a session.
+    """
     return (session['timestamp'].iloc[-1] - session['timestamp'].iloc[0]).seconds
+
+
+def convert_timestamp(df):
+    """
+    Convert string timestamp to datetime.
+    """
+    return df.assign(timestamp=pd.to_datetime(df['timestamp']))
+
+
+def assign_round(df):
+    """
+    Extract `round` from `event_data`.
+    """
+    return df.assign(round=df['event_data'].str.extract(r'"round":(\d+)', expand=False).astype(float))
+
+
+def assign_level(df):
+    """
+    Extract `level` from `event_data`.
+    """
+    return df.assign(level=df['event_data'].str.extract(r'"level":(\d+)', expand=False).astype(float))
+
+
+def assign_misses(df):
+    """
+    Extract `misses` from `event_data`.
+    """
+    return df.assign(misses=df['event_data'].str.extract(r'"misses":(\d+)', expand=False).astype(float))
+
+
+def assign_title_event_code(df):
+    """
+    Concatenate `title` and `event_code`.
+    """
+    return df.assign(title_event_code=df['title'] + '_' + df['event_code'].astype(str))
 
 
 def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False):
@@ -152,6 +190,9 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
     assessment_count = 0
     durations = []
     clip_durations = []
+    game_rounds = []
+    game_levels = []
+    game_misses = []
 
     user_activities_count = make_counter(encoders['type'].keys())
     accuracy_groups = {f'acg_{acg}': 0 for acg in [0, 1, 2, 3]}
@@ -172,7 +213,19 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
         if session_type == 'Clip':
             clip_durations.append(get_clip_time(title))
 
-        # note that this condition contains assessment sessions that don't have attempts.
+        if session_type == 'Game':
+            rnd = session['round'].max()
+            if not np.isnan(rnd):
+                game_rounds.append(rnd)
+
+            level = session['level'].max()
+            if not np.isnan(level):
+                game_levels.append(level)
+
+            if session['misses'].notnull().all():
+                game_misses.append(session['misses'].sum())
+
+            # note that this condition contains assessment sessions that don't have attempts.
         if (session_type == 'Assessment') & (is_test_set or len(session) > 1):
             attempts = filter_assessment_attempt(session)
             correct_attempts = attempts['event_data'].str.contains('true').sum()
@@ -221,6 +274,19 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             features['duration_mean'] = np.mean(durations) if durations else 0
             features['duration_std'] = np.std(durations) if durations else 0
             features['duration_var'] = np.var(durations) if durations else 0
+
+            # game round.
+            features['game_round_mean'] = np.mean(game_rounds) if game_rounds else 0
+
+            # game level.
+            features['game_level_mean'] = np.mean(game_levels) if game_levels else 0
+
+            # game misses.
+            features['game_misses_sum'] = np.sum(game_misses) if game_misses else 0
+            features['game_misses_mean'] = np.mean(game_misses) if game_misses else 0
+            features['game_misses_std'] = np.std(game_misses) if game_misses else 0
+            features['game_misses_var'] = np.var(game_misses) if game_misses else 0
+
             durations.append(get_session_duration(session))
 
             features['accumulated_accuracy'] = safe_div(accumulated_accuracy, assessment_count)
@@ -291,13 +357,17 @@ def main():
     train_labels = read_from_raw('train_labels.csv')
     train = remove_useless_users(train, train_labels)
 
-    # convert timestamp from string to datetime.
-    train['timestamp'] = pd.to_datetime(train['timestamp'])
-    test['timestamp'] = pd.to_datetime(test['timestamp'])
+    # preprocess.
+    funcs = [
+        convert_timestamp,
+        assign_round,
+        assign_level,
+        assign_misses,
+        assign_title_event_code,
+    ]
 
-    # add 'title_event_code'.
-    train['title_event_code'] = train['title'] + '_' + train['event_code'].astype(str)
-    test['title_event_code'] = test['title'] + '_' + test['event_code'].astype(str)
+    train = apply_funcs(train, funcs)
+    test = apply_funcs(test, funcs)
 
     # build label encoders.
     cols_enc = ['title', 'event_code', 'title_event_code', 'event_id', 'world', 'type']
@@ -306,7 +376,7 @@ def main():
 
     train, test = get_train_and_test(train, test, encoders, assess_titles)
 
-    # move 'installation_id' and 'game_session' to front
+    # move `installation_id` and `game_session` to front.
     train = move_id_front(train)
     test = move_id_front(test)
 
@@ -319,7 +389,7 @@ def main():
                                    merged[cols[-1] + '_y'],
                                    check_dtype=False, check_names=False)
 
-    to_drop = find_highly_correlated_columns(train)
+    to_drop = find_highly_correlated_columns(train, verbose=True)
     train = train.drop(to_drop, axis=1)
     test = test.drop(to_drop, axis=1)
 

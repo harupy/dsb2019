@@ -96,7 +96,8 @@ class BaseModel(metaclass=ABCMeta):
                 # y_val = y_val.loc[mask_val]
 
                 model, eval_result = self.fit(X_trn, y_trn, X_val, y_val, config)
-                oof_preds[idx_val, seed_idx] = self.predict(model, X_val)
+                oof_preds[y_val.index.values, seed_idx] = self.predict(model, X_val)
+
                 # # when truncating validation data.
                 # oof_preds.append(self.predict(model, X_val))
                 # oof_labels.append(y_val)
@@ -104,4 +105,4 @@ class BaseModel(metaclass=ABCMeta):
                 self.models.append(model)
                 self.eval_results.append(eval_result)
 
-        return np.median(oof_preds, axis=1)
+        return np.nanmedian(oof_preds, axis=1)

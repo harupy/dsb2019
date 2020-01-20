@@ -52,7 +52,7 @@ def train_cv(config, X, y, inst_ids, cv):
     models = []
     eval_results = []
     num_seeds = len(config.seeds)
-    oof_pred = np.zeros((len(X), num_seeds))
+    oof_pred = np.zeros((len(X), num_seeds)) * np.nan
 
     for seed_idx, seed in enumerate(config.seeds):
         config.params.update({'random_state': seed})
@@ -84,9 +84,9 @@ def train_cv(config, X, y, inst_ids, cv):
             X_trn = X_trn.loc[mask_trn]
             y_trn = y_trn.loc[mask_trn]
 
-            # mask_val = random_sample(inst_ids_val, seed)
-            # X_val = X_val.loc[mask_val.index]
-            # y_val = y_val.loc[mask_val.index]
+            mask_val = random_truncate(inst_ids_val, seed)
+            X_val = X_val.loc[mask_val.index]
+            y_val = y_val.loc[mask_val.index]
 
             trn_set = lgb.Dataset(X_trn, y_trn)
             val_set = lgb.Dataset(X_val, y_val)
@@ -103,7 +103,8 @@ def train_cv(config, X, y, inst_ids, cv):
             models.append(model)
             eval_results.append(eval_result)
 
-    return models, eval_results, np.median(oof_pred, axis=1)
+    print(oof_pred)
+    return models, eval_results, np.nanmedian(oof_pred, axis=1)
 
 
 def flatten_features(features):
@@ -230,7 +231,7 @@ def main():
     # train = train.drop(to_drop, axis=1)
     # test = test.drop(to_drop, axis=1)
 
-    # # adjust distribution between train and test.
+    # adjust distribution between train and test.
     # test, to_drop = adjust_distribution(train, test)
     # train = train.drop(to_drop, axis=1)
     # test = test.drop(to_drop, axis=1)
@@ -263,41 +264,26 @@ def main():
     lgb_model = LgbModel()
 
     # perform cross-validation.
-    oof_preds = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+    oof_pred = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
 
-    # opt = OptimizedRounder()
-    # opt.fit(y_train, oof_preds)
-    # preds_round = opt.predict(oof_preds)
-    # QWK = qwk(y_train, preds_round)
-    # bounds = opt.boundaries.tolist()
-
-    # optimize round boundaries.
-    # bounds = []
-    # qwks = []
-    # for preds, labels in zip(oof_preds, oof_labels):
-    #     opt = OptimizedRounder()
-    #     opt.fit(labels, preds)
-    #     preds_round = opt.predict(preds)
-    #     bounds.append(opt.boundaries)
-    #     qwks.append(qwk(labels, preds_round))
-
-    # bounds_avg = np.mean(bounds, axis=0)
-    # qwk_avg = np.mean(qwks)
-    # print('----- Optimization result -----')
-    # print('boundaries:', bounds_avg)
-    # print('QWK:', qwk_avg)
-
-    # pred_avg = predict_average(models, X_test)
-    test_pred = lgb_model.predict_median(X_test)
+    opt = OptimizedRounder()
+    opt.fit(y_train, oof_pred)
+    oof_pred = opt.predict(oof_pred)
+    QWK = qwk(y_train, oof_pred)
+    bounds = opt.boundaries.tolist()
 
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
-    bounds = percentile_boundaries(y_train, test_pred)
-    oof_round = digitize(oof_preds, bounds)
-    QWK = qwk(y_train, oof_round)
+    # bounds = percentile_boundaries(y_train, test_pred)
+    # oof_round = digitize(oof_preds, bounds)
+    # QWK = qwk(y_train, oof_round)
+    # print('boundaries:', bounds)
+    # print('QWK:', QWK)
+
     print('boundaries:', bounds)
     print('QWK:', QWK)
 
+    test_pred = lgb_model.predict_median(X_test)
     pred_sbm = digitize(test_pred, bounds)
 
     # convert to integers.
@@ -345,13 +331,13 @@ def main():
         mlflow.log_metrics({'qwk': QWK})
 
         # log plots
-        cm = confusion_matrix(y_train, oof_round)
+        cm = confusion_matrix(y_train, oof_pred)
         log_figure(plot_confusion_matrix(cm), 'confusion_matrix.png')
         log_figure(plot_eval_results(lgb_model.eval_results), 'eval_history.png')
 
         # log label share
         log_figure(plot_label_share(y_train), 'train_label_share.png')
-        log_figure(plot_label_share(oof_round), 'pred_label_share.png')
+        log_figure(plot_label_share(oof_pred), 'pred_label_share.png')
 
         # feature importance
         feature_names = lgb_model.feature_name()
