@@ -262,9 +262,11 @@ def main():
 
     # models, eval_results, oof_pred = train_cv(config, X_train, y_train, inst_ids_train, cv)
     lgb_model = LgbModel()
+    xgb_model = XgbModel()
 
     # perform cross-validation.
-    oof_pred = lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+    oof_pred = 0.8 * lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+    oof_pred += 0.2 * xgb_model.cv(X_train, y_train, inst_ids_train, cv, config.xgboost)
 
     opt = OptimizedRounder()
     opt.fit(y_train, oof_pred)
