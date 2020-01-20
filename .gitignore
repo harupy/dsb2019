@@ -147,3 +147,4 @@ input/
 script.py
 scripts/*
 !scripts/script_template.py
+!scripts/kernel-metadata-base.json
