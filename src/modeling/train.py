@@ -246,9 +246,9 @@ def main():
     test = test.drop(to_drop, axis=1)
 
     # Saving data on Kaggle might cause IOError.
-    if not on_kaggle():
-        save_features(train, 'final', 'train')
-        save_features(test, 'final', 'test')
+    # if not on_kaggle():
+    #     save_features(train, 'final', 'train')
+    #     save_features(test, 'final', 'test')
 
     # replace non-alphanumeric characters with '_'
     # to prevent LightGBM from raising an error on invalid column names.
@@ -275,7 +275,7 @@ def main():
     xgb_model = XgbModel()
 
     # perform cross-validation.
-    oof_pred = 0.8 * lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
+    oof_pred = 1.0 * lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
     # oof_pred += 0.2 * xgb_model.cv(X_train, y_train, inst_ids_train, cv, config.xgboost)
 
     opt = OptimizedRounder()
