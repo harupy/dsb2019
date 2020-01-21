@@ -1,24 +1,51 @@
+SEEDS = list(range(5))
+
 config = {
-  # note: lgb.train(params, ..., **fit_params)
-  'params': {
-    'boosting_type': 'gbdt',
-    'objective': 'regression',
-    'metric': 'rmse',
-    'subsample': 0.75,
-    'subsample_freq': 1,
-    'learning_rate': 0.01,
-    'feature_fraction': 0.9,
-    'max_depth': 15,
-    'lambda_l1': 1,
-    'lambda_l2': 1,
-    'random_state': 42,
+  'lightgbm': {
+    # https://lightgbm.readthedocs.io/en/latest/Parameters.html
+    'params': {
+      'boosting_type': 'gbdt',
+      'objective': 'regression',
+      'metric': 'rmse',
+      'learning_rate': 0.01,
+      'subsample': 0.75,  # sample rows
+      'colsample_bytree': 0.9,  # sample columns
+      'subsample_freq': 1,
+      'max_depth': 15,
+      'reg_alpha': 1,
+      'reg_lambda': 1,
+      'random_state': SEEDS[0],
+    },
+    # https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.train.html#lightgbm.train
+    'fit': {
+        'num_boost_round': 10000,
+        'verbose_eval': 100,
+        'early_stopping_rounds': 100,
+        'categorical_feature': ['title']  # important
+    },
+    'seeds': SEEDS,
   },
 
-  'fit': {
-      'num_boost_round': 10000,
-      'verbose_eval': 100,
-      'early_stopping_rounds': 100,
-      'categorical_feature': ['title']  # important
+  'xgboost': {
+    # https://xgboost.readthedocs.io/en/latest/parameter.html#xgboost-parameters
+    'params': {
+      'objective': 'reg:squarederror',
+      'eval_metric': 'rmse',
+      'learning_rate': 0.01,
+      'subsample': 0.75,  # sample rows
+      'colsample_bytree': 0.9,  # sample columns
+      'max_depth': 10,
+      'reg_alpha': 1,
+      'reg_lambda': 1,
+      'seed': SEEDS[0],
+    },
+    # https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.train
+    'fit': {
+        'num_boost_round': 10000,
+        'verbose_eval': 100,
+        'early_stopping_rounds': 100,
+    },
+    'seeds': SEEDS,
   },
 
   'cv': {
@@ -27,8 +54,6 @@ config = {
       'n_splits': 5
     },
   },
-
-  'seeds': [0, 1, 2, 3, 4],
 
   'features': [
     # can be str or dict.
