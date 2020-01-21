@@ -87,3 +87,8 @@ On Kaggle kernel, The disk utility is limited to 4.9 GB. Saving large amount of 
 
 - Set `seed` and `random_state`.
 - Don't use `set`.
+
+## Lessons
+
+- Check every single time (null, zero, constant).
+- Test if testable.

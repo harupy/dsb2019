@@ -17,8 +17,10 @@ from utils.io import (read_config,
                       save_features,
                       find_features_meta)
 from utils.dataframe import (assert_columns_equal,
-                             find_constant_columns,
-                             find_highly_correlated_columns,
+                             constant_columns,
+                             all_zero_columns,
+                             all_null_columns,
+                             highly_correlated_columns,
                              apply_funcs)
 from utils.plotting import (plot_importance,
                             plot_label_share,
@@ -221,24 +223,32 @@ def main():
     train = train.reset_index(drop=True)
     test = test.reset_index(drop=True)
 
-    # remove constant columns.
-    constant_columns = find_constant_columns(train)
-    train = train.drop(constant_columns, axis=1)
-    test = test.drop(constant_columns, axis=1)
+    to_drop = []
+    funcs = [all_zero_columns, all_null_columns, constant_columns]
+    for func in funcs:
+        to_drop += func(train)
+        to_drop += func(test)
+
+    # remove duplicates.
+    to_drop = list(set(to_drop))
+
+    train = train.drop(to_drop, axis=1)
+    test = test.drop(to_drop, axis=1)
 
     # # remove highly correlated features.
-    # to_drop = find_highly_correlated_columns(train, verbose=True)
-    # train = train.drop(to_drop, axis=1)
-    # test = test.drop(to_drop, axis=1)
+    to_drop = highly_correlated_columns(train, verbose=True)
+    train = train.drop(to_drop, axis=1)
+    test = test.drop(to_drop, axis=1)
 
     # adjust distribution between train and test.
-    # test, to_drop = adjust_distribution(train, test)
-    # train = train.drop(to_drop, axis=1)
-    # test = test.drop(to_drop, axis=1)
+    test, to_drop = adjust_distribution(train, test)
+    train = train.drop(to_drop, axis=1)
+    test = test.drop(to_drop, axis=1)
 
-    # Saving data might cause IOError on Kaggle.
-    # save_features(train, 'final', 'train')
-    # save_features(test, 'final', 'test')
+    # Saving data on Kaggle might cause IOError.
+    if not on_kaggle():
+        save_features(train, 'final', 'train')
+        save_features(test, 'final', 'test')
 
     # replace non-alphanumeric characters with '_'
     # to prevent LightGBM from raising an error on invalid column names.
@@ -266,13 +276,15 @@ def main():
 
     # perform cross-validation.
     oof_pred = 0.8 * lgb_model.cv(X_train, y_train, inst_ids_train, cv, config.lightgbm)
-    oof_pred += 0.2 * xgb_model.cv(X_train, y_train, inst_ids_train, cv, config.xgboost)
+    # oof_pred += 0.2 * xgb_model.cv(X_train, y_train, inst_ids_train, cv, config.xgboost)
 
     opt = OptimizedRounder()
     opt.fit(y_train, oof_pred)
     oof_pred = opt.predict(oof_pred)
     QWK = qwk(y_train, oof_pred)
-    bounds = opt.boundaries.tolist()
+
+    # Note that boundaries might be unsorted.
+    bounds = np.sort(opt.boundaries).tolist()
 
     # Some top public kernels use this method, but this is dangerous because
     # the label distribution of the private test set might be different from the train set.
@@ -320,7 +332,7 @@ def main():
             fig.savefig(fpath, dpi=200)
             mlflow.log_artifact(fpath)
 
-    # create mlflow experiment using the config name if not exists.
+    # create MLflow experiment using the config name if not exists.
     config_name = remove_dir_ext(args.config)
     if mlflow.get_experiment_by_name(config_name) is None:
         mlflow.create_experiment(config_name)

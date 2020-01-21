@@ -183,7 +183,7 @@ def adjust_distribution(train, test):
     to_remove = []
     ignore = ['accuracy_group', 'installation_id', 'accuracy_group', 'title']
     test_adjusted = test.copy()
-    for col in test.columns:
+    for col in test.select_dtypes('number').columns:
         if col in ignore:
             continue
 
@@ -199,6 +199,7 @@ def adjust_distribution(train, test):
             else:
                 test_adjusted[col] *= adjust_factor
         except Exception as e:
+            print(col)
             print(e)
 
     return test_adjusted, to_remove

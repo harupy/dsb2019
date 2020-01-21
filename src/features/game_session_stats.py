@@ -8,7 +8,10 @@ from tqdm import tqdm
 
 from utils.io import read_from_raw, save_features, save_features_meta
 from utils.common import remove_dir_ext, prefix_list
-from utils.dataframe import apply_funcs, assert_columns_equal, find_highly_correlated_columns
+from utils.dataframe import (apply_funcs,
+                             assert_columns_equal,
+                             inspect_columns,
+                             highly_correlated_columns)
 from features.funcs import (remove_useless_users,
                             classify_accuracy,
                             filter_assessment,
@@ -222,7 +225,8 @@ def process_user_sample(user_sample, encoders, assess_titles, is_test_set=False)
             if not np.isnan(level):
                 game_levels.append(level)
 
-            if session['misses'].notnull().all():
+            # append if `session` contains al least one valid value.
+            if not session['misses'].isnull().all():
                 game_misses.append(session['misses'].sum())
 
             # note that this condition contains assessment sessions that don't have attempts.
@@ -389,7 +393,10 @@ def main():
                                    merged[cols[-1] + '_y'],
                                    check_dtype=False, check_names=False)
 
-    to_drop = find_highly_correlated_columns(train, verbose=True)
+    inspect_columns(train)
+    inspect_columns(test)
+
+    to_drop = highly_correlated_columns(train, verbose=True)
     train = train.drop(to_drop, axis=1)
     test = test.drop(to_drop, axis=1)
 

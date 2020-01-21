@@ -3,6 +3,7 @@ Utilities for pandas dataframe.
 """
 
 from functools import reduce
+from pprint import pprint
 import numpy as np
 import pandas as pd
 
@@ -188,14 +189,47 @@ def assert_columns_equal(left, right):
     assert left.columns.tolist() == right.columns.tolist()
 
 
-def find_constant_columns(df):
+def all_zero_columns(df):
+    """
+    Returns all-zero columns of given dataframe.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'a': [1, 2, 3], 'b': [0, 0, 0]})
+    >>> all_zero_columns(df)
+    ['b']
+    """
+    return df.eq(0).all(axis=0).pipe(lambda s: s[s]).index.tolist()
+
+
+def all_null_columns(df):
+    """
+    Returns all-null columns of given dataframe.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'a': [1, 2, np.nan], 'b': [np.nan, np.nan, np.nan]})
+    >>> all_null_columns(df)
+    ['b']
+    """
+    return df.isnull().all(axis=0).pipe(lambda s: s[s]).index.tolist()
+
+
+def constant_columns(df):
     """
     Returns constant columns of given dataframe.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({'a': [1, 2, 3], 'b': [0, 0, 0]})
+    >>> constant_columns(df)
+    ['b']
+
     """
-    return df.loc[:, (df == df.iloc[0]).all()].columns.tolist()
+    return (df == df.iloc[0]).all(axis=0).pipe(lambda s: s[s]).index.tolist()
 
 
-def find_highly_correlated_columns(df, thresh=0.995, verbose=False):
+def highly_correlated_columns(df, thresh=0.995, verbose=False):
     """
     Find highly correlated columns.
 
@@ -207,7 +241,7 @@ def find_highly_correlated_columns(df, thresh=0.995, verbose=False):
     ...     'c': [-1, -2, -3],
     ...     'd': [0.5, 0.1, 0.3],
     ... })
-    >>> find_highly_correlated_columns(df)
+    >>> highly_correlated_columns(df)
     ['b', 'c']
     """
     features = df.select_dtypes('number').columns
@@ -226,3 +260,22 @@ def find_highly_correlated_columns(df, thresh=0.995, verbose=False):
                     print('{} Feature_a: {} Feature_b: {} - correlation: {}'
                           .format(counter, feat_a, feat_b, corr))
     return result
+
+
+def inspect_columns(df):
+    """
+    Apply the folllowing functions to a given dataframe and display the results.
+    - all_zero_columns
+    - all_null_columns
+    - constant_columns
+    """
+    funcs = [
+        all_zero_columns,
+        all_null_columns,
+        constant_columns,
+    ]
+
+    for func in funcs:
+        cols = func(df)
+        print(f'\n---------- {func.__name__} ----------\n')
+        pprint(cols)

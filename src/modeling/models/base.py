@@ -13,6 +13,10 @@ def random_truncate(groups, seed):
 
 
 class BaseModel(metaclass=ABCMeta):
+    """
+    Interface for models.
+    """
+
     def __init__(self):
         self.models = []
         self.eval_results = []
