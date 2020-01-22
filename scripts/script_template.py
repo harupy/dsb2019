@@ -85,7 +85,7 @@ def main():
     skip_commit_run()
 
     # find features scripts to run from the training configuration.
-    feature_scripts = get_feature_scripts(CONFIG['features'])
+    feature_scripts = get_feature_scripts(CONFIG['features'] + 'cum_best_accuracy_group')
 
     # generate features.
     for features_script in feature_scripts:

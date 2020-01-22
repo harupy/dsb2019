@@ -303,6 +303,17 @@ def main():
     # convert to integers.
     pred_sbm = pred_sbm.astype(np.int8)
 
+    # post process (not sure if this works.)
+    cum_best = read_features('cum_best_accuracy_group', 'test')  # only use test data.
+    cum_best = cum_best[['installation_id', 'cum_best_accuracy_group']]
+    cum_best = cum_best[cum_best['cum_best_accuracy_group'] == 3.0]  # use only 3.0
+    cum_best = cum_best.groupby('installation_id', sort=False).last().reset_index()
+    cum_best = pd.merge(sbm, cum_best, on=['installation_id'], how='left')
+    cum_best = cum_best['cum_best_accuracy_group'].values
+    print('Nan count:', np.isnan(cum_best).sum())
+
+    pred_sbm = np.where(np.isnan(cum_best), pred_sbm, cum_best)
+
     # assert pred does not contain invalid values
     assert (~np.isnan(pred_sbm)).all()
     assert np.isin(pred_sbm, [0, 1, 2, 3]).all()
