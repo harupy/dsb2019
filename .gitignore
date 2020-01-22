@@ -144,7 +144,10 @@ mlruns/
 input/
 *.csv
 
-script.py
+# scripts to submit to Kaggle
 scripts/*
 !scripts/script_template.py
 !scripts/kernel-metadata-base.json
+
+# credentials for Kaggle
+credentials.py

@@ -17,15 +17,15 @@ def best_accuracy_before(df, encoder):
     columns = [re.sub(r'[^a-zA-Z\d]+', '_', c).strip('_') for c in columns]
     columns = prefix_list(columns, 'acg')
 
-    onehot = encoder.transform(df[['title']]).toarray().astype(np.int8)
-    expanded = pd.DataFrame(df[['accuracy_group']].values * onehot, columns=columns)
+    onehot = encoder.transform(df[['title']]).toarray()
+    expanded = pd.DataFrame(df[['accuracy_group']].values * np.where(onehot == 1.0, onehot, np.nan), columns=columns)
     expanded = concat_dfs([df, expanded], axis=1)
 
     def func(gdf):
-        return concat_dfs([gdf.drop(columns, axis=1), gdf[columns].cummax().shift(1)], axis=1)
+        return concat_dfs([gdf.drop(columns, axis=1), gdf[columns].expanding().max().shift(1)], axis=1)
 
     expanded = expanded.groupby('installation_id', sort=False).apply(func)
-    return expanded.assign(best_accuracy_group=np.sum(expanded[columns].values * onehot, axis=1))
+    return expanded.assign(best_accuracy_group=np.sum(np.nan_to_num(expanded[columns].values) * onehot, axis=1))
 
 
 def main():
