@@ -300,9 +300,6 @@ def main():
     test_pred = lgb_model.predict_median(X_test)
     pred_sbm = digitize(test_pred, bounds)
 
-    # convert to integers.
-    pred_sbm = pred_sbm.astype(np.int8)
-
     # post process (not sure if this works.)
     cum_best = read_features('cum_best_accuracy_group', 'test')  # only use test data.
     cum_best = cum_best[['installation_id', 'cum_best_accuracy_group']]
@@ -313,6 +310,7 @@ def main():
     print('Nan count:', np.isnan(cum_best).sum())
 
     pred_sbm = np.where(np.isnan(cum_best), pred_sbm, cum_best)
+    pred_sbm = pred_sbm.astype(np.int8)
 
     # assert pred does not contain invalid values
     assert (~np.isnan(pred_sbm)).all()
