@@ -99,6 +99,21 @@ class JointConfusionMatrix:
         self.ax_marg_y.barh(pos, true_dist / true_dist.sum(), **props)
 
 
+def plot_corr_matrix(corr):
+    """
+    Plot a correlation matrix as a heatmap.
+    """
+    fig, ax = plt.subplots()
+    mask = np.zeros_like(corr, dtype=np.bool)
+    mask[np.triu_indices_from(mask, k=1)] = True
+    sns.heatmap(corr, vmin=-1, vmax=1, mask=mask,
+                cmap=sns.diverging_palette(220, 10, as_cmap=True),
+                linewidths=0.5, cbar=True, square=True, ax=ax)
+    ax.set_title('Correlation Matrix')
+    fig.tight_layout()
+    return fig
+
+
 def plot_confusion_matrix(cm):
     """
     Plot confusion matrix as a joint heatmap.
@@ -109,29 +124,33 @@ def plot_confusion_matrix(cm):
     return g.fig
 
 
-def plot_importance(features, importance, importance_type, importance_std=None, max_num_features=None):
+def plot_feature_importance(feature_names, importance, importance_type,
+                            std=None, max_num_features=None):
     """
     Plot feature importance.
     """
+    feature_names = np.array(feature_names)
+    importance = np.array(feature_names)
+
     if max_num_features is None:
         indices = np.argsort(importance)
     else:
         indices = np.argsort(importance)[-max_num_features:]
 
-    features = np.array(features)[indices]
+    features = np.array(feature_names)[indices]
     importance = importance[indices]
     num_features = len(features)
 
     # If num_features > 10, increase the figure height to prevent the plot
-    # from being too dense.
+    # from becoming too dense to understand.
     w, h = [6.4, 4.8]  # matplotlib's default figure size
     h = h + 0.1 * num_features if num_features > 10 else h
     fig, ax = plt.subplots(figsize=(w, h))
 
     yloc = np.arange(num_features)
     ax.barh(yloc, importance, align='center', height=0.5)
-    if plot_importance:
-        ax.barh(yloc, importance_std[indices], align='center', height=0.5)
+    if std:
+        ax.barh(yloc, std[indices], align='center', height=0.5)
     ax.set_yticks(yloc)
     ax.set_yticklabels(features)
     ax.set_xlabel('Importance')
@@ -162,7 +181,7 @@ def plot_label_share(labels):
 
 def plot_eval_results(eval_results):
     """
-    Plot evaluation results for XGBoost and LightGBM.
+    Plot evaluation results for XGBoost and LightGBM models.
     """
     fig, ax = plt.subplots()
     for fold_idx, evals in enumerate(eval_results):
@@ -178,11 +197,11 @@ def plot_eval_results(eval_results):
     return fig
 
 
-def plot_tree(model):
+def plot_tree(model, tree_index=0):
     """
-    Plot tree structure of give model.
+    Plot tree structure of the given model.
     """
     fig, ax = plt.subplots(1, 1, figsize=(15, 15), dpi=700)
-    lgb.plot_tree(model, tree_index=0, show_info=['split_gain'], ax=ax)
+    lgb.plot_tree(model, tree_index=tree_index, show_info=['split_gain'], ax=ax)
     fig.tight_layout()
     return fig

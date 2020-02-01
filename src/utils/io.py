@@ -32,7 +32,7 @@ def read_config(fpath):
 
 def read_json(fpath):
     """
-    Read a json file.
+    Read a JSON file.
     """
     with open(fpath, 'r') as f:
         return json.load(f)
@@ -40,18 +40,18 @@ def read_json(fpath):
 
 def read_yaml(fpath):
     """
-    Read a yaml file.
+    Read a YAML file.
     """
     with open("example.yaml", 'r') as f:
         return yaml.safe_load(f)
 
 
-def save_dict(dct, fpath):
+def to_json(data, fpath):
     """
-    Save a dictionary as json.
+    Save a dictionary as JSON.
     """
     with open(fpath, 'w') as f:
-        json.dump(dct, f, indent=2)
+        json.dump(data, f, indent=2, sort_keys=True)
 
 
 def read_data(fpath):

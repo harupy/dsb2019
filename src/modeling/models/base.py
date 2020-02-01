@@ -24,29 +24,41 @@ class BaseModel(metaclass=ABCMeta):
 
     @abstractmethod
     def fit(self, X_trn, y_trn, X_val, y_val, config):
+        """
+        Train a model using the training and valid set.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def predict(self, model, X):
+        """
+        Predict scores for X.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    def feature_importance(self, model, X):
+    def feature_importance(self, model, importance_type):
+        """
+        Return feature importance of the given model.
+        """
         raise NotImplementedError
 
     @abstractmethod
-    def feature_name(self, model, X):
+    def feature_name(self, model):
+        """
+        Return feature names used for training.
+        """
         raise NotImplementedError
 
     def predict_average(self, X):
         """
-        Predict average score using given models.
+        Predict average scores for X.
         """
         return np.mean([self.predict(model, X) for model in self.models], axis=0)
 
     def predict_median(self, X):
         """
-        Predict median score using given models.
+        Predict median scores for X.
         """
         return np.median([self.predict(model, X) for model in self.models], axis=0)
 

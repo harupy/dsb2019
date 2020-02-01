@@ -17,13 +17,17 @@ class LgbModel(BaseModel):
         return model, eval_result
 
     def predict(self, model, X):
+
         return model.predict(X)
 
     def feature_importance(self, model, importance_type):
         """
-        Note that feature importance must be aligned to feature names.
+        Return feature importance of the given model.
         """
         return model.feature_importance(importance_type=importance_type)
 
     def feature_name(self):
+        """
+        Return feature names used for training.
+        """
         return self.models[0].feature_name()

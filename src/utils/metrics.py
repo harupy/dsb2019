@@ -15,7 +15,7 @@ def qwk(a1, a2):
     """
     Compute quadratic weighted kappa.
 
-    https://www.kaggle.com/c/data-science-bowl-2019/discussion/114133#latest-660168
+    Copied from: https://www.kaggle.com/c/data-science-bowl-2019/discussion/114133#latest-660168
     """
     max_rat = 3
     a1 = np.asarray(a1, dtype=int)

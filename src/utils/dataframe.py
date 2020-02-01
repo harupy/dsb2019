@@ -16,13 +16,10 @@ def reduce_mem_usage(df, verbose=True):
     --------
     >>> from datetime import datetime
     >>> df = pd.DataFrame({
-    ...     # non-numeric columns (should not be converted.)
     ...     'object': ['a'],
     ...     'bool': [True],
     ...     'datetime': [datetime.now()],
     ...     'timedelta': [datetime.now() - datetime.now()],
-    ...
-    ...     # numeric columns (should be converted.)
     ...     'np.int8': [0],
     ...     'np.int16': [np.iinfo(np.int8).max],
     ...     'np.int32': [np.iinfo(np.int16).max],
