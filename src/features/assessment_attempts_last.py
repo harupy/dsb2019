@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from utils.common import remove_dir_ext, prefix_list
-from utils.io import read_from_clean, save_features, save_features_meta
+from utils.io import read_from_clean, save_features, save_feature_meta
 from utils.dataframe import apply_funcs, concat_dfs
 from utils.encoding import build_one_hot_encoder, get_categories
 from features.funcs import (filter_assessment_attempt,
@@ -59,7 +59,7 @@ def main():
 
     use_cols = ['installation_id', 'game_session', 'best_accuracy_group']
     meta = {'use_cols': use_cols}
-    save_features_meta(meta, name)
+    save_feature_meta(meta, name)
 
 
 if __name__ == '__main__':

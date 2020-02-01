@@ -3,6 +3,7 @@ Utilities for common operations.
 """
 
 import os
+import collections
 from datetime import datetime
 
 
@@ -66,6 +67,25 @@ def suffix_dict_keys(dct, suffix, sep='_'):
 
     """
     return {k + sep + suffix: v for k, v in dct.items()}
+
+
+def flatten_dict(d, parent_key='', sep='.'):
+    """
+    Flatten a nested dictionary.
+
+    Examples
+    --------
+    >>> flatten_dict({'a': {'b': 'c'}})
+    {'a.b': 'c'}
+    """
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 
 def with_name(func, name):

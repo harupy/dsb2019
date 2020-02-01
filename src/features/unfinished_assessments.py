@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils.io import read_from_clean, save_features, save_features_meta
+from utils.io import read_from_clean, save_features, save_feature_meta
 from utils.common import remove_dir_ext
 from utils.dataframe import apply_funcs
 from features.funcs import (filter_assessment_attempt,
@@ -41,7 +41,7 @@ def main():
 
     use_cols = ['installation_id', 'game_session', 'cumsum_unfinished']
     meta = {'use_cols': use_cols}
-    save_features_meta(meta, name)
+    save_feature_meta(meta, name)
 
 
 if __name__ == '__main__':

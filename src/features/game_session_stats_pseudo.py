@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from utils.io import read_from_raw, save_features, save_features_meta
+from utils.io import read_from_raw, save_features, save_feature_meta
 from utils.common import remove_dir_ext, prefix_list
 from utils.dataframe import (apply_funcs,
                              assert_columns_equal,
@@ -408,7 +408,7 @@ def main():
     assert_columns_equal(train, test)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
-    save_features_meta({'drop_cols': ['accuracy', 'accuracy_group']}, name)
+    save_feature_meta({'drop_cols': ['accuracy', 'accuracy_group']}, name)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils.common import remove_dir_ext
-from utils.io import read_from_raw, save_features, save_features_meta
+from utils.io import read_from_raw, save_features, save_feature_meta
 from features.funcs import remove_useless_users, cum_by_user
 
 
@@ -55,7 +55,7 @@ def main():
     name = remove_dir_ext(__file__)
     save_features(train, name, 'train')
     save_features(test, name, 'test')
-    save_features_meta({'drop_cols': ['misses']}, name)
+    save_feature_meta({'drop_cols': ['misses']}, name)
 
 
 if __name__ == '__main__':

@@ -48,10 +48,18 @@ def read_yaml(fpath):
 
 def to_json(data, fpath):
     """
-    Save a dictionary as JSON.
+    Write data to a JSON file.
     """
     with open(fpath, 'w') as f:
         json.dump(data, f, indent=2, sort_keys=True)
+
+
+def to_yaml(data, fpath):
+    """
+    Write data to a YAML file.
+    """
+    with open(fpath, 'w') as f:
+        yaml.dump(data, f, default_flow_style=False)
 
 
 def read_data(fpath):
@@ -173,7 +181,7 @@ def save_features(df, name, train_or_test, fmt='ftr'):
     save_data(df, fpath)
 
 
-def save_features_meta(data, name):
+def save_feature_meta(data, name, fmt='json'):
     """
     Save features meta data (dict).
 
@@ -184,11 +192,17 @@ def save_features_meta(data, name):
     - drop_cols: columns to drop when building training data.
 
     """
-    fpath = os.path.join(FTR_DIR, name, 'meta.json')
-    save_dict(data, fpath)
+    fpath = os.path.join(FTR_DIR, name, f'meta.{fmt}')
+
+    if fmt == 'json':
+        to_json(data, fpath)
+    elif fmt == 'yaml':
+        to_yaml(data, fpath)
+    else:
+        raise ValueError('Invalid format: {}.'.format(fmt))
 
 
-def find_features_meta(name):
+def find_feature_meta(name):
     """
     Find features meta data (dict). If the meta data file is not found, return None.
 

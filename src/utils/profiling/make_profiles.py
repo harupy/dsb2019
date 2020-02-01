@@ -9,7 +9,7 @@ from utils.common import get_ext, replace_ext
 
 
 # relative from the root.
-TEMPLATE_PATH = 'src/utils/profile_template.ipynb'
+TEMPLATE_PATH = 'src/utils/profiling/profile_template.ipynb'
 
 
 def parse_args():

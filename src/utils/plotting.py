@@ -129,13 +129,17 @@ def plot_feature_importance(feature_names, importance, importance_type,
     """
     Plot feature importance.
     """
+
     feature_names = np.array(feature_names)
-    importance = np.array(feature_names)
+    importance = np.array(importance)
 
     if max_num_features is None:
         indices = np.argsort(importance)
+        msg = ''
     else:
         indices = np.argsort(importance)[-max_num_features:]
+        msg = (f'\n(showing only top {max_num_features} features)'
+               if len(feature_names) > max_num_features else '')
 
     features = np.array(feature_names)[indices]
     importance = importance[indices]
@@ -149,12 +153,12 @@ def plot_feature_importance(feature_names, importance, importance_type,
 
     yloc = np.arange(num_features)
     ax.barh(yloc, importance, align='center', height=0.5)
-    if std:
+    if std is not None:
         ax.barh(yloc, std[indices], align='center', height=0.5)
     ax.set_yticks(yloc)
     ax.set_yticklabels(features)
     ax.set_xlabel('Importance')
-    ax.set_title('Feature Importance ({})'.format(importance_type))
+    ax.set_title('Feature Importance ({}){}'.format(importance_type, msg))
     fig.tight_layout()
     return fig
 
