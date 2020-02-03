@@ -15,7 +15,7 @@ from utils.io import (read_config,
                       read_from_raw,
                       read_features,
                       save_features,
-                      find_features_meta)
+                      find_feature_meta)
 from utils.dataframe import (assert_columns_equal,
                              constant_columns,
                              all_zero_columns,
@@ -195,7 +195,7 @@ def main():
     # merge features
     for feature_name in flatten_features(config.features):
         train_ft, test_ft = read_features(feature_name)
-        meta = find_features_meta(feature_name)
+        meta = find_feature_meta(feature_name)
 
         # Some features don't have meta data.
         if meta:

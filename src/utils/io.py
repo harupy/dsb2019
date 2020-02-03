@@ -209,6 +209,7 @@ def find_feature_meta(name):
     Notes
     -----
     Meta data is used to select or drop columns when training.
+
     """
     fpath = os.path.join(FTR_DIR, name, 'meta.json')
     if not os.path.exists(fpath):

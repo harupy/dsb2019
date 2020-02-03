@@ -15,7 +15,7 @@ from utils.io import (read_config,
                       read_from_raw,
                       read_features,
                       save_features,
-                      find_features_meta)
+                      find_feature_meta)
 from utils.dataframe import constant_columns, highly_correlated_columns, apply_funcs
 from utils.plotting import (plot_importance,
                             plot_label_share,
@@ -128,7 +128,7 @@ def main():
     # merge features
     for feature_name in flatten_features(config.features):
         train_ft, test_ft = read_features(feature_name)
-        meta = find_features_meta(feature_name)
+        meta = find_feature_meta(feature_name)
 
         if meta:
             train_ft = apply_meta(train_ft, meta)
