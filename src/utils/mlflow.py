@@ -31,7 +31,7 @@ def _artifact_context(fpath):
         mlflow.log_artifact(tmp_path, artifact_path)
 
 
-def log_figure(fig, fpath):
+def log_fig(fig, fpath):
     """
     Log a matplotlib figure.
     """
@@ -50,7 +50,7 @@ def log_dict(dct, fpath):
 
 def log_df(df, fpath):
     """
-    Log a pandas dataframe.
+    Log a pandas dataframe in csv or feather format.
     """
     with _artifact_context(fpath) as tmp_path:
         save_data(df, tmp_path)

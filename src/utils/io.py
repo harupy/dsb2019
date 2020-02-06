@@ -10,7 +10,7 @@ import pandas as pd
 
 from utils.dataframe import reduce_mem_usage
 
-# NOTE: `/kaggle/input` is a read-only directory in Kaggle.
+# NOTE: "/kaggle/input" is a read-only directory in Kaggle.
 PARENT_DIR = '../input' if 'KAGGLE_KERNEL_RUN_TYPE' in os.environ else 'data'
 RAW_DIR = f'{PARENT_DIR}/data-science-bowl-2019'
 CLEAN_DIR = f'data/clean'
@@ -140,7 +140,7 @@ def read_features(name, train_or_test=None, fmt='ftr'):
 
     save_dir = os.path.join(FTR_DIR, name)
 
-    # if `train_or_test` is None, return both train and test data.
+    # if train_or_test is None, return both train and test data.
     if train_or_test is None:
         return (
             read_data(os.path.join(save_dir, f'{name}_train.{fmt}')),
