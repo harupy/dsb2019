@@ -3,6 +3,9 @@ from sklearn import datasets
 
 
 def _get_X_y(data, column_formatter=None):
+    """
+    Convert scikit-learn's dataset to pandas dataframe and series.
+    """
     columns = (data.feature_names if column_formatter is None
                else list(map(column_formatter, data.feature_names)))
     X = pd.DataFrame(data.data, columns=columns)

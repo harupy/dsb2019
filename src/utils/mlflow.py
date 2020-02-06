@@ -1,5 +1,8 @@
+"""
+Utilities for MLflow.
+"""
+
 import os
-import shutil
 import tempfile
 import matplotlib.pyplot as plt
 import mlflow
@@ -18,14 +21,14 @@ def set_experiment(expr_name):
 
 @contextmanager
 def _artifact_context(fpath):
-    tmpdir = tempfile.mkdtemp()
-    tmp_path = os.path.join(tmpdir, os.path.basename(fpath))
-    try:
+    """
+    Context to make it easier to log files.
+    """
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = os.path.join(tmp_dir, os.path.basename(fpath))
         yield tmp_path
-    finally:
         artifact_path = os.path.dirname(fpath) if len(fpath.split(os.sep)) > 1 else None
         mlflow.log_artifact(tmp_path, artifact_path)
-        shutil.rmtree(tmpdir)
 
 
 def log_figure(fig, fpath):

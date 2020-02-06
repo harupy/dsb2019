@@ -195,7 +195,7 @@ class TargetEncoder():
     def _target_mean(self, Xy):
         return Xy.groupby(self.feature_col)[self.target_col].mean()
 
-    def _oof_mean(self, Xy):
+    def _oof_target_mean(self, Xy):
         # transform train data.
         kf = KFold(n_splits=self.n_splits, shuffle=True,
                    random_state=self.random_state)
@@ -209,7 +209,7 @@ class TargetEncoder():
         for col in self.cols:
             Xy = self._merge_X_y(X[col], y)
             feature_name = self._feature_name(col)
-            target_mean = self._oof_mean(Xy)
+            target_mean = self._oof_target_mean(Xy)
             X = X.assign(**{feature_name: target_mean})
         return X
 
@@ -229,7 +229,7 @@ class TargetEncoder():
 
             # transform train data.
             feature_name = self._feature_name(col)
-            target_mean = self._oof_mean(Xy)
+            target_mean = self._oof_target_mean(Xy)
             X_trn = X_trn.assign(**{feature_name: target_mean})
 
             # transform validation data.

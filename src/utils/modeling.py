@@ -8,16 +8,17 @@ from sklearn.model_selection import KFold, StratifiedKFold, GroupKFold
 from utils.array import div_by_sum
 
 
+def _make_map(classes):
+    return {cls.__name__: cls for cls in classes}
+
+
 def get_cv(config):
     """
     Create a cross-validation splitter with given configuration.
     """
-    classes = {
-        KFold.__name__: KFold,
-        StratifiedKFold.__name__: StratifiedKFold,
-        GroupKFold.__name__: GroupKFold,
-    }
-    return classes[config.cv.type](**config.cv.params)
+
+    classes = [KFold, StratifiedKFold, GroupKFold]
+    return _make_map(classes)[config.cv.type](**config.cv.params)
 
 
 def average_feature_importance(models, importance_type, normalize=True):
