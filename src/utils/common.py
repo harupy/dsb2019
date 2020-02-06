@@ -4,7 +4,9 @@ Utilities for common operations.
 
 import os
 import collections
+import random
 from datetime import datetime
+import numpy as np
 
 
 def prefix_list(lst, prefix, sep='_'):
@@ -207,3 +209,12 @@ def get_timestamp():
 
     """
     return datetime.now().strftime('%Y%m%d_%H%M%S')
+
+
+def seed_everything(seed=1234):
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    # torch.manual_seed(seed)
+    # torch.cuda.manual_seed(seed)
+    # torch.backends.cudnn.deterministic = True
