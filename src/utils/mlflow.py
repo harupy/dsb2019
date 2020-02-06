@@ -40,7 +40,7 @@ def log_figure(fig, fpath):
         plt.close(fig)
 
 
-def log_dict(dct, fpath, fmt='json'):
+def log_dict(dct, fpath):
     """
     Log a dict as JSON.
     """

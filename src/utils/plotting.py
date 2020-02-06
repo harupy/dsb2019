@@ -129,7 +129,6 @@ def plot_feature_importance(feature_names, importance, importance_type,
     """
     Plot feature importance.
     """
-
     feature_names = np.array(feature_names)
     importance = np.array(importance)
 
