@@ -83,10 +83,6 @@ class AggEncoder():
                 X = X.merge(features[self._to_dict_key(key)], on=key, how='left')
         return X
 
-    def fit_transform(self, df):
-        self.fit(df)
-        return self.transform(df)
-
 
 class AggDiffEncoder(AggEncoder):
 
@@ -109,7 +105,7 @@ class AggRatioEncoder(AggEncoder):
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
+    def transform(self, X, y=None):
         for k, v, a in self._iter_param_dict():
             agg_feature = super()._feature_name(k, v, a)
             new_feature = self._feature_name(k, v, a)
@@ -125,7 +121,7 @@ class AggDiffRatioEncoder(AggEncoder):
     def fit(self, X, y=None):
         return self
 
-    def transform(self, X):
+    def transform(self, X, y=None):
         for k, v, a in self._iter_param_dict():
             agg_feature = super()._feature_name(k, v, a)
             new_feature = self._feature_name(k, v, a)
@@ -147,7 +143,7 @@ class OneHotEncoder():
         self.enc.fit(X[self.cols].astype(str))
         return self
 
-    def transform(self, X):
+    def transform(self, X, y=None):
         new_columns = self.get_feature_names()
         transformed = pd.DataFrame(self.enc.transform(X[self.cols].astype(str)).toarray(),
                                    index=X.index, columns=new_columns)
@@ -163,16 +159,16 @@ class FreqEncoder():
     def get_feature_names(self):
         return list(self.enc.keys())
 
-    def fit(self, df):
+    def fit(self, X, y=None):
         self.enc = {}
         for col in self.cols:
-            self.enc[col] = df[col].value_counts(normalize=self.normalize)
+            self.enc[col] = X[col].value_counts(normalize=self.normalize)
         return self
 
-    def transform(self, df):
+    def transform(self, X, y=None):
         for col in self.cols:
-            df = df.assign(**{f'{col}_freq': df[col].map(self.enc[col])})
-        return df
+            X = X.assign(**{f'{col}_freq': X[col].map(self.enc[col])})
+        return X
 
 
 class TargetEncoder():
